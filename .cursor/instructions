@@ -1,0 +1,510 @@
+# Netanya Municipality Streamlit App - Cursor AI Instructions
+
+## 🏛️ Project Overview
+You are working on a multilingual Streamlit web application for Netanya Municipality in Israel. The app helps residents submit municipal service requests through an intuitive category → street number → summary → submission flow.
+
+## 🎯 Core Application Features
+
+### Primary Request Categories
+The user's explicit requirements include:
+- **Editable Text Field**: Summary page with pre-filled content that users can modify
+- **Default Language**: Hebrew (RTL) as the primary language
+- **Search Box Clearing**: Automatic search clearing after every navigation step
+- **API Submission**: Real POST requests to Netanya Municipality API with `multipart/form-data`
+- **Success Notifications**: Toast notifications (not popups) after successful submissions
+- **URL Parameter Handling**: Support for `?category={id}&street={id}` direct navigation
+- **URL Parameter Cleanup**: Remove parameters from browser URL after processing
+- **Israeli Phone Validation**: Specific validation patterns for Israeli phone numbers
+- **Random Hebrew Data**: Pre-filled forms with Hebrew names for development
+
+### Application Flow
+1. **Categories Page**: Grid view of service categories with auto-clearing search
+2. **Street Numbers Page**: Grid view of street addresses with auto-clearing search  
+3. **Summary Page**: Review all data with editable text field and SEND button
+4. **API Submission**: Submit to real municipality API or mock (debug mode)
+5. **Success Notification**: Toast with ticket number, save to history, restart flow
+
+### URL Parameter Deep Linking
+- Support `?category={id}&street={id}` for direct navigation
+- If user data exists: go directly to summary page
+- If no user data: show data collection popup first
+- Always clear URL parameters after processing
+
+## 🌍 Multilingual Requirements
+
+### Language Priority
+1. **Hebrew (he)** - Default language, RTL layout, primary focus
+2. **English (en)** - Secondary language, LTR layout
+3. **French (fr)** - Additional language, LTR layout  
+4. **Russian (ru)** - Additional language, LTR layout
+
+### RTL Implementation
+When Hebrew is selected:
+- Apply `direction: rtl` to all containers
+- Right-align text inputs and form fields
+- Adjust grid layouts for RTL reading pattern
+- Position language selector and search appropriately
+
+### Translation Structure
+```python
+# All text must use translation keys
+st.text_input(t("forms.first_name", lang))
+st.button(t("common.save", lang))
+st.success(t("messages.success_message", lang).format(ticket_number=ticket))
+```
+
+## 📱 Mobile-First Design Requirements
+
+### Responsive Grid Layout
+- **Mobile (≤768px)**: 1-2 items per row, larger touch targets (min 44px)
+- **Tablet (769-1024px)**: 2-3 items per row, medium spacing
+- **Desktop (>1024px)**: 3-4 items per row, optimal spacing
+
+### Touch-Friendly Design
+- All buttons minimum 44px height
+- Adequate spacing between interactive elements
+- Large, readable fonts (16px+ on mobile)
+- Clear visual feedback on interactions
+
+## 🔄 State Management Patterns
+
+### Session State Structure
+```python
+# Initialize these keys in session state
+{
+    'current_page': 'categories',           # Current page view
+    'selected_category': None,              # Selected Category object
+    'selected_street': None,                # Selected StreetNumber object
+    'show_popup': False,                    # Data collection popup visibility
+    'search_query': '',                     # Current search query (auto-clears)
+    'current_language': 'he',               # Current language (Hebrew default)
+    'url_params_processed': False,          # URL parameter processing flag
+    'show_success_toast': False,            # Success toast visibility
+    'last_ticket_number': None,             # Last submitted ticket number
+    'user_data': None,                      # Cached user data
+}
+```
+
+### Navigation Rules
+1. **Always clear search** on navigation: `st.session_state.search_query = ""`
+2. **Process URL parameters** only once on app startup
+3. **Clear URL parameters** after processing: `st.query_params.clear()`
+4. **Use st.rerun()** for state transitions (not deprecated methods)
+
+## 🔍 Search Functionality Implementation
+
+### Auto-Clearing Behavior
+Search query MUST clear when:
+- User clicks a category (navigates to streets)
+- User clicks a street number (navigates to summary)
+- User navigates between pages manually
+- URL parameters trigger navigation
+
+### Search Implementation Pattern
+```python
+def render_search():
+    search_query = st.text_input(
+        t("common.search", lang),
+        value=st.session_state.get("search_query", ""),
+        key="search_input",
+        placeholder=t("common.search_placeholder", lang)
+    )
+    
+    # Update state if search changed
+    if search_query != st.session_state.get("search_query", ""):
+        st.session_state.search_query = search_query
+        st.rerun()
+```
+
+## 🔗 URL Parameter System
+
+### Parameter Format
+- Single category: `?category={id}`
+- Full navigation: `?category={id}&street={id}`
+
+### Processing Logic
+```python
+def handle_url_parameters():
+    query_params = st.query_params
+    category_id = query_params.get("category")
+    street_id = query_params.get("street")
+    
+    if category_id and street_id:
+        # Check if user data exists for direct summary navigation
+        user_data = storage_service.load_user_data()
+        if user_data:
+            # Direct to summary page
+            navigate_to_summary_with_params(category_id, street_id)
+        else:
+            # Show data collection popup first
+            show_data_collection_popup()
+    elif category_id:
+        # Navigate to streets page
+        navigate_to_streets_with_category(category_id)
+    
+    # Always clear parameters after processing
+    st.query_params.clear()
+```
+
+## 📊 Data Models and Validation
+
+### Core Data Structures
+```python
+@dataclass
+class UserData:
+    first_name: str        # Max 35 chars, required
+    last_name: str         # Max 35 chars, required  
+    user_id: str          # Max 12 digits, optional
+    phone: str            # Israeli format, required
+    email: Optional[str] = None  # Valid format, optional
+
+@dataclass
+class Category:
+    id: int
+    name: str
+    text: str             # Comma-separated options
+    image_url: str
+    event_call_desc: str  # For API submission
+
+@dataclass
+class StreetNumber:
+    id: int
+    name: str
+    image_url: str
+    house_number: str     # For API submission
+```
+
+### Israeli Phone Validation
+```python
+def validate_israeli_phone(phone: str) -> bool:
+    """Validate Israeli phone number patterns."""
+    cleaned = re.sub(r'[\s\-]', '', phone)
+    patterns = [
+        r'^0[2-4,8-9]\d{7}$',   # Landline
+        r'^05[0-9]\d{7}$',      # Mobile  
+        r'^07[2-9]\d{7}$',      # Special services
+    ]
+    return any(re.match(pattern, cleaned) for pattern in patterns)
+```
+
+## 🔧 API Integration Requirements
+
+### Municipality API Endpoint
+- **URL**: `https://www.netanya.muni.il/_layouts/15/NetanyaMuni/incidents.ashx?method=CreateNewIncident`
+- **Method**: POST
+- **Content-Type**: `multipart/form-data`
+
+### Request Payload Format
+```python
+{
+    "eventCallSourceId": 4,
+    "cityCode": "7400", 
+    "cityDesc": "נתניה",
+    "eventCallCenterId": "3",
+    "eventCallDesc": category.event_call_desc,
+    "streetCode": "898",
+    "streetDesc": "קרל פופר", 
+    "houseNumber": street.house_number,
+    "callerFirstName": user_data.first_name,
+    "callerLastName": user_data.last_name,
+    "callerTZ": user_data.user_id,
+    "callerPhone1": user_data.phone,
+    "callerEmail": user_data.email,
+    "contactUsType": "3"
+}
+```
+
+### Debug vs Release Mode
+- **Debug Mode**: Use mock API responses with fake ticket numbers
+- **Release Mode**: Send real requests to municipality API
+- **Configuration**: Check `APP_MODE` environment variable
+
+## 🏛️ Municipal Service Categories and Business Logic
+
+### Common Municipal Service Categories
+Based on the existing translations and typical Israeli municipality services:
+
+```python
+# Typical categories that should be supported
+MUNICIPAL_CATEGORIES = {
+    "lighting": {
+        "he": "תאורת רחוב",
+        "en": "Street Lighting", 
+        "description": "Street light outages, broken fixtures, timing issues"
+    },
+    "cleaning": {
+        "he": "ניקיון",
+        "en": "Cleaning Services",
+        "description": "Garbage collection, street cleaning, littering issues"
+    },
+    "maintenance": {
+        "he": "תחזוקה",
+        "en": "Maintenance",
+        "description": "Road repairs, sidewalk issues, infrastructure problems"
+    },
+    "parks": {
+        "he": "גנים וגינות",
+        "en": "Parks and Gardens", 
+        "description": "Park maintenance, playground issues, landscaping"
+    },
+    "noise": {
+        "he": "רעש",
+        "en": "Noise Complaints",
+        "description": "Construction noise, loud music, disturbances"
+    },
+    "animals": {
+        "he": "בעלי חיים",
+        "en": "Animals",
+        "description": "Stray animals, pest control, animal welfare"
+    }
+}
+```
+
+### Business Validation Rules
+```python
+def validate_business_rules(user_data: UserData, category: Category, street: StreetNumber) -> ValidationResult:
+    """Apply municipality-specific business validation."""
+    errors = []
+    
+    # Israeli ID validation (if provided)
+    if user_data.user_id and not validate_israeli_id(user_data.user_id):
+        errors.append("Invalid Israeli ID format")
+    
+    # Phone number must be Israeli format
+    if not validate_israeli_phone(user_data.phone).is_valid:
+        errors.append("Phone number must be Israeli format")
+    
+    # Municipal working hours validation (optional)
+    current_time = datetime.now()
+    if is_outside_working_hours(current_time):
+        # Still allow submission but add warning
+        pass
+    
+    return ValidationResult(len(errors) == 0, errors)
+
+def validate_israeli_id(id_number: str) -> bool:
+    """Validate Israeli ID number using check digit algorithm."""
+    if not id_number.isdigit() or len(id_number) != 9:
+        return False
+    
+    # Israeli ID check digit algorithm
+    total = 0
+    for i, digit in enumerate(id_number):
+        num = int(digit) * (2 if i % 2 == 1 else 1)
+        total += num if num < 10 else num // 10 + num % 10
+    
+    return total % 10 == 0
+```
+
+### Municipal Address Validation
+```python
+def validate_netanya_address(street_name: str, house_number: str) -> bool:
+    """Validate that address exists in Netanya."""
+    # This would typically connect to municipal address database
+    # For now, validate format and basic checks
+    
+    if not street_name or not house_number:
+        return False
+    
+    # Hebrew street names should be valid Hebrew characters
+    if contains_hebrew(street_name):
+        return validate_hebrew_street_name(street_name)
+    
+    # House number format validation
+    return validate_house_number_format(house_number)
+```
+
+### Service Request Priority Logic
+```python
+def determine_request_priority(category: Category, description: str) -> str:
+    """Determine priority based on category and description keywords."""
+    high_priority_keywords = ["חירום", "emergency", "danger", "urgent", "דחוף"]
+    emergency_categories = ["lighting", "maintenance"]  # Safety-related
+    
+    if any(keyword in description.lower() for keyword in high_priority_keywords):
+        return "high"
+    
+    if category.event_call_desc in emergency_categories:
+        return "medium"
+    
+    return "normal"
+```
+
+## 🎨 UI Component Guidelines
+
+### Grid View Components
+```python
+def create_grid_view(items, on_click, search_query=""):
+    """Create responsive grid with auto-clearing search support."""
+    filtered_items = filter_items(items, search_query)
+    
+    if not filtered_items:
+        st.info(t("common.no_results", lang))
+        return
+    
+    cols_per_row = calculate_responsive_columns()
+    cols = st.columns(cols_per_row)
+    
+    for idx, item in enumerate(filtered_items):
+        with cols[idx % cols_per_row]:
+            if st.button(
+                f"🖼️ {item.name}",
+                key=f"item_{item.id}",
+                use_container_width=True,
+                help=getattr(item, 'text', '')
+            ):
+                # Clear search before navigation
+                st.session_state.search_query = ""
+                on_click(item)
+```
+
+### Data Collection Popup
+```python
+def show_data_collection_popup(lang="he"):
+    """Show popup with pre-filled Hebrew data for development."""
+    st.markdown(f"### {t('common.save', lang)}")
+    
+    # Generate random Hebrew user data in debug mode
+    if debug_mode:
+        user = generate_random_hebrew_user()
+    else:
+        user = UserData("", "", "", "", "")
+    
+    with st.form("user_data_form", clear_on_submit=False):
+        first_name = st.text_input(
+            t("forms.first_name", lang),
+            value=user.first_name,
+            max_chars=35,
+            autocomplete="given-name"
+        )
+        # ... other fields
+```
+
+### Success Toast Notification
+```python
+def show_success_toast(ticket_number: str, lang="he"):
+    """Show non-blocking success notification."""
+    message = t("messages.success_message", lang).format(
+        ticket_number=ticket_number
+    )
+    st.success(message)
+    
+    # Save ticket to history
+    storage_service.save_ticket(ticket_number)
+    
+    # Auto-clear toast flag
+    if st.session_state.get("show_success_toast"):
+        st.session_state.show_success_toast = False
+```
+
+## 💾 Local Storage Management
+
+### Storage Keys
+- `user_data`: Serialized UserData object
+- `selected_language`: Current language preference
+- `ticket_history`: Array of successful submission ticket numbers
+
+### Storage Operations
+```python
+def save_user_data(user_data: UserData):
+    """Save user data to localStorage for persistence."""
+    storage_service.save_user_data(user_data)
+
+def load_user_data() -> Optional[UserData]:
+    """Load existing user data from localStorage."""
+    return storage_service.load_user_data()
+
+def save_ticket(ticket_number: str):
+    """Add ticket number to history."""
+    storage_service.save_ticket(ticket_number)
+```
+
+## 🚨 Error Handling Patterns
+
+### API Error Handling
+```python
+try:
+    response = api_service.submit_data(user_data, category, street)
+    # Show success toast
+    st.success(t("messages.success_message", lang).format(
+        ticket_number=response.data
+    ))
+    # Save ticket and restart flow
+    storage_service.save_ticket(response.data)
+    restart_application_flow()
+    
+except APIError as e:
+    st.error(t("messages.error_message", lang))
+    logger.error(f"API submission failed: {e}")
+    
+except NetworkError as e:
+    st.error(t("messages.network_error", lang))
+    logger.error(f"Network error: {e}")
+```
+
+### Validation Error Display
+```python
+def handle_validation_errors(errors: List[str], lang="he"):
+    """Display validation errors to user."""
+    for error in errors:
+        st.error(t(f"validation.{error}", lang))
+```
+
+## 🧪 Development and Testing
+
+### Debug Mode Features
+- Pre-filled random Hebrew names in forms
+- Mock API responses with fake ticket numbers
+- Enhanced logging and debug information
+- No real API calls to municipality
+
+### Testing Requirements
+- Unit tests for all validation functions
+- Integration tests for API service
+- UI component tests
+- Israeli phone validation tests
+- URL parameter handling tests
+
+## 🔄 Common Development Workflows
+
+### Adding New Features
+1. Update data models if needed
+2. Add translation keys for all languages
+3. Implement with proper error handling
+4. Add URL parameter support if relevant
+5. Ensure search auto-clearing works
+6. Test on mobile devices
+7. Add unit tests
+
+### Debugging Issues
+1. Check debug mode is enabled
+2. Verify translation keys exist
+3. Check session state management
+4. Verify URL parameter handling
+5. Test search clearing behavior
+6. Check RTL layout for Hebrew
+
+### Common Issues to Avoid
+- Forgetting to clear search on navigation
+- Not handling URL parameters properly
+- Missing RTL support for Hebrew
+- Using deprecated Streamlit methods
+- Hardcoding strings instead of translation keys
+- Not validating Israeli phone numbers correctly
+- Missing error handling for API calls
+
+## 🎯 Success Criteria
+
+Your code is successful when:
+1. **Hebrew is the default language** with proper RTL support
+2. **Search clears automatically** on every navigation step
+3. **URL parameters work** for direct navigation and are cleaned up
+4. **API integration works** in both debug and release modes
+5. **Mobile responsiveness** works across all device sizes
+6. **Israeli phone validation** accepts valid numbers and rejects invalid ones
+7. **Error handling** gracefully manages all failure scenarios
+8. **Toast notifications** show success messages without blocking UI
+9. **Random Hebrew data** pre-fills forms in debug mode
+10. **Code follows** all the patterns and structures defined in the rules
+
+Remember: This is a production application for a municipality, so reliability, user experience, and proper localization are critical. 

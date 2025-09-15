@@ -1,0 +1,698 @@
+# Netanya Municipality Streamlit App - Cursor AI Rules
+
+## 🎯 Project Context
+This is a multilingual Streamlit application for Netanya Municipality with Hebrew as the default language, URL parameter handling, and advanced user experience features.
+
+## 📁 Project Structure (MUST FOLLOW)
+```
+app/
+├── main.py                    # Application entry point with URL parameter handling
+├── components/                # UI Components
+│   ├── header.py             # Header with language selector, banner, auto-clearing search
+│   ├── grid_view.py          # Responsive grid for categories/street numbers
+│   ├── popups.py             # Data collection, success, error popups with random Hebrew data
+│   └── search.py             # Search functionality with auto-clearing
+├── services/                 # Business Logic Services
+│   ├── supabase_service.py   # Database operations with ID lookups
+│   ├── api_service.py        # HTTP API integration with debug/release modes
+│   └── storage_service.py    # Local storage management with user data persistence
+├── utils/                    # Utility Functions
+│   ├── models.py             # Data models and types
+│   ├── validation.py         # Israeli phone number validation
+│   ├── i18n.py              # Internationalization with Hebrew as default
+│   └── helpers.py           # Helper functions including URL parameter handling
+└── config/                  # Configuration
+    ├── settings.py          # Environment and app settings
+    └── constants.py         # Application constants
+```
+
+## 🔧 Code Standards (MANDATORY)
+
+### Type Hints
+- ALL functions must have type hints
+- Use proper return types: `-> Optional[Category]`, `-> List[UserData]`
+- Import types: `from typing import List, Optional, Dict, Any, Callable`
+
+### Function Documentation
+- Every function needs docstrings with Args and Returns
+- Example:
+```python
+def validate_israeli_phone(phone: str) -> ValidationResult:
+    """Validate Israeli phone numbers with specific patterns.
+    
+    Args:
+        phone: Phone number string to validate
+        
+    Returns:
+        ValidationResult with validation status and errors
+    """
+```
+
+### Naming Conventions
+- Functions: `snake_case` - `get_category_by_id()`
+- Classes: `PascalCase` - `UserData`, `ValidationResult`
+- Constants: `UPPER_SNAKE_CASE` - `SESSION_KEYS`, `HEBREW_NAMES`
+- Files: `snake_case.py` - `storage_service.py`
+
+### Error Handling
+- NEVER let the app crash - always use try/catch
+- Always show user-friendly error messages
+- Log errors for debugging: `logger.error(f"API Error: {error}")`
+
+## 🌍 Internationalization Rules
+
+### Default Language: Hebrew
+- Application starts in Hebrew (`lang="he"`)
+- RTL support is mandatory for Hebrew
+- All translation keys must exist in Hebrew first
+
+### Translation Function
+```python
+# ALWAYS use this pattern
+from app.utils.i18n import t
+st.text_input(t("forms.first_name", lang))
+```
+
+### Translation File Management
+- Translation files located in `assets/translations/`
+- Required files: `he.json`, `en.json`, `fr.json`, `ru.json`
+- Use existing translation keys - DO NOT create new ones without updating all language files
+
+### Existing Translation Structure
+```python
+# Common UI elements
+t("common.welcome", lang)           # "לשום" 
+t("common.search", lang)            # "חיפוש"
+t("common.save", lang)              # "שמור"
+t("common.send", lang)              # "שלח"
+t("common.cancel", lang)            # "ביטול"
+
+# Form fields
+t("forms.first_name", lang)         # "שם פרטי פיקטיבי (לא חובה)"
+t("forms.last_name", lang)          # "שם משפחה פיקטיבי (לא חובה)"
+t("forms.phone", lang)              # "טלפון"
+t("forms.email", lang)              # "אימייל - לא חובה"
+t("forms.text", lang)               # "תלונה"
+
+# Success messages
+t("success.title", lang)            # "נפתחה קריאה חדשה"
+t("success.message", lang)          # "הבקשה שלך נשלחה בהצלחה"
+t("success.ticket_number", lang)    # "מס קריאה"
+
+# Validation errors
+t("validation.first_name", lang)    # Hebrew validation message
+t("validation.phone", lang)         # "מספר טלפון שגוי"
+```
+
+### Translation Rules
+- NEVER hardcode strings - always use translation keys
+- If adding new text, add the key to ALL language files (he, en, fr, ru)
+- Hebrew text should be grammatically correct and formal (municipal context)
+- Success messages should include ticket number formatting: `{ticket_number}`
+
+### RTL Support
+- Apply RTL styling when language is Hebrew
+- Use `direction: rtl` and `text-align: right`
+- Consider icon positioning for RTL
+
+## 📱 Mobile-First Design Rules
+
+### Responsive Grid
+- Desktop: 3-4 items per row
+- Tablet: 2-3 items per row  
+- Mobile: 1-2 items per row
+- Use `st.columns()` with responsive logic
+
+### Touch Targets
+- Minimum 44px touch targets
+- Use `use_container_width=True` for buttons
+- Add proper spacing between interactive elements
+
+### Streamlit Best Practices
+- Use `use_container_width=True` instead of deprecated `use_column_width`
+- Always set `key` parameters for form elements to avoid conflicts
+- Use `st.rerun()` instead of deprecated `st.experimental_rerun()`
+
+## 🔄 State Management Rules
+
+### Session State Keys
+```python
+SESSION_KEYS = {
+    'current_page': 'categories',
+    'selected_category': None,
+    'selected_street': None,
+    'show_popup': False,
+    'search_query': '',
+    'current_language': 'he',  # Default to Hebrew
+    'url_params_processed': False,
+    'show_success_toast': False,
+}
+```
+
+### Navigation Rules
+- Clear search query on every navigation: `st.session_state.search_query = ""`
+- Use proper page transitions with `st.rerun()`
+- Handle URL parameters and clear them after processing
+
+## 🔗 URL Parameter Handling
+
+### Parameter Format
+- `?category={id}&street={id}` for direct navigation
+- Process parameters once and clear from URL
+- Handle invalid parameters gracefully
+
+### Parameter Processing Flow
+1. Check for URL parameters on app startup
+2. Load user data to determine navigation path
+3. Set session state based on parameters
+4. Clear parameters: `st.query_params.clear()`
+
+## 📊 Data Models (USE THESE EXACT STRUCTURES)
+
+```python
+@dataclass
+class UserData:
+    first_name: str
+    last_name: str
+    user_id: str
+    phone: str
+    email: Optional[str] = None
+
+@dataclass
+class Category:
+    id: int
+    name: str
+    text: str
+    image_url: str
+    event_call_desc: str
+
+@dataclass
+class ValidationResult:
+    is_valid: bool
+    errors: List[str]
+```
+
+## 🔍 Search Functionality Rules
+
+### Auto-Clearing Search
+- Search MUST clear on: category selection, street selection, page navigation
+- Implement with: `st.session_state.search_query = ""`
+- Use debounced search with 300ms delay
+
+### Search Implementation
+```python
+def render_search_box_with_clearing():
+    search_query = st.text_input(
+        t("common.search"),
+        value=st.session_state.get("search_query", ""),
+        key="search_input",
+        placeholder=t("common.search_placeholder")
+    )
+    if search_query != st.session_state.get("search_query", ""):
+        st.session_state.search_query = search_query
+        st.rerun()
+```
+
+## 🎛️ Environment & Configuration
+
+### Debug vs Release Mode
+- Debug mode: Mock API responses, pre-filled Hebrew data
+- Release mode: Real API calls to municipality
+- Check mode: `if self.debug_mode:` for branching logic
+
+### Environment Variables
+- `APP_MODE`: "debug" or "release"
+- `DEBUG`: Boolean flag for backward compatibility
+- `SUPABASE_URL` and `SUPABASE_KEY`: Database config
+- `DEFAULT_LANGUAGE`: Override default (defaults to "he")
+
+### Environment File Management
+- Create separate environment files for different modes:
+  - `.env.debug` - Development configuration with mock APIs
+  - `.env.release` - Production configuration with real APIs
+- Copy appropriate file to `.env` before running: `cp .env.debug .env`
+- NEVER commit actual `.env` files - use `.env.example` templates
+
+### Example Environment Configuration
+```bash
+# .env.debug
+APP_MODE=debug
+DEBUG=True
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
+API_ENDPOINT=mock
+DEFAULT_LANGUAGE=he
+
+# .env.release  
+APP_MODE=release
+DEBUG=False
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
+API_ENDPOINT=https://www.netanya.muni.il/_layouts/15/NetanyaMuni/incidents.ashx?method=CreateNewIncident
+DEFAULT_LANGUAGE=he
+```
+
+### SSL Certificate Configuration
+- For custom Supabase SSL certificates, place in `certs/` directory
+- Add to environment: `SUPABASE_SSL_CERT=certs/prod-ca-2021.crt`
+- Handle SSL certificate loading in Supabase client initialization
+
+## 🔒 Validation Rules
+
+### Israeli Phone Validation
+```python
+israeli_patterns = [
+    r'^0[2-4,8-9]\d{7}$',      # Landline
+    r'^05[0-9]\d{7}$',         # Mobile
+    r'^07[2-9]\d{7}$',         # Special services
+]
+```
+
+### Form Validation
+- First/Last name: max 35 chars, required
+- Phone: Israeli format, required
+- ID: numeric only, max 12 digits, optional
+- Email: valid format, optional
+
+## 🎨 UI Component Rules
+
+### Grid Items
+- Show image + name for each item
+- Use hover effects for better UX
+- Handle click events properly: `if st.button():`
+- Set unique keys: `key=f"item_{item.id}"`
+
+### Popups and Notifications
+- Use toast notifications for success messages
+- Pre-fill popup forms with random Hebrew data in debug mode
+- Always provide cancel/exit options
+
+### Form Best Practices
+- Use `st.form()` for data collection
+- Set `clear_on_submit=False` to preserve data
+- Add proper autocomplete attributes
+- Use `max_chars` for input limits
+
+## 🚨 Error Handling Patterns
+
+### API Errors
+```python
+try:
+    response = api_service.submit_data(user_data, category, street)
+    st.success(t("messages.success_message").format(ticket_number=response.data))
+except APIError as e:
+    st.error(t("messages.error_message"))
+    logger.error(f"API submission failed: {e}")
+```
+
+### Database Errors
+```python
+try:
+    categories = supabase_service.get_categories()
+except Exception as e:
+    st.error(t("messages.database_error"))
+    logger.error(f"Database error: {e}")
+    return []
+```
+
+## 🧪 Testing Requirements
+
+### Unit Tests
+- Test all validation functions
+- Test data transformations
+- Test utility functions
+- Achieve 90%+ code coverage
+
+### Test Structure and Organization
+```
+tests/
+├── unit/
+│   ├── test_validation.py      # Israeli phone, form validation
+│   ├── test_i18n.py           # Translation loading, RTL detection
+│   ├── test_models.py         # Data model validation
+│   ├── test_helpers.py        # URL parameter processing
+│   └── test_storage.py        # Local storage operations
+├── integration/
+│   ├── test_supabase.py       # Database operations
+│   ├── test_api_service.py    # API integration (mock & real)
+│   ├── test_user_flows.py     # Complete user journeys
+│   └── test_url_params.py     # URL parameter handling
+├── e2e/
+│   ├── test_mobile.py         # Mobile responsiveness
+│   ├── test_rtl.py           # Hebrew RTL functionality
+│   └── test_accessibility.py  # ARIA labels, keyboard navigation
+└── conftest.py                # Test configuration and fixtures
+```
+
+### Test Patterns and Examples
+```python
+# Unit test example - Israeli phone validation
+def test_validate_israeli_phone():
+    # Valid Israeli mobile numbers
+    assert validate_israeli_phone("0501234567").is_valid == True
+    assert validate_israeli_phone("0541234567").is_valid == True
+    
+    # Valid Israeli landline numbers  
+    assert validate_israeli_phone("0312345678").is_valid == True
+    assert validate_israeli_phone("0212345678").is_valid == True
+    
+    # Invalid numbers
+    assert validate_israeli_phone("123").is_valid == False
+    assert validate_israeli_phone("0601234567").is_valid == False
+
+# Integration test example - URL parameter handling
+def test_url_parameter_navigation():
+    # Test direct navigation with existing user data
+    with mock_user_data():
+        result = handle_url_parameters("?category=1&street=5")
+        assert result.page == "summary"
+        assert result.category_id == 1
+        assert result.street_id == 5
+
+# E2E test example - Complete user flow
+def test_new_user_complete_flow():
+    # Simulate complete new user journey
+    page = CategoryPage()
+    page.select_category(1)
+    
+    popup = DataCollectionPopup()
+    popup.fill_form(test_user_data)
+    popup.submit()
+    
+    streets = StreetsPage() 
+    streets.select_street(5)
+    
+    summary = SummaryPage()
+    summary.click_send()
+    
+    assert summary.shows_success_toast()
+```
+
+### Test Data and Fixtures
+```python
+# conftest.py - Test fixtures
+@pytest.fixture
+def test_user_data():
+    return UserData(
+        first_name="דוד",
+        last_name="כהן", 
+        user_id="123456789",
+        phone="0501234567",
+        email="test@example.com"
+    )
+
+@pytest.fixture  
+def mock_supabase_data():
+    categories = [
+        Category(id=1, name="תאורת רחוב", text="בעיות תאורה", image_url="", event_call_desc="lighting"),
+        Category(id=2, name="ניקיון", text="בעיות ניקיון", image_url="", event_call_desc="cleaning")
+    ]
+    return {"categories": categories}
+```
+
+### Testing Commands
+```bash
+# Run all tests with coverage
+pytest tests/ -v --cov=app --cov-report=html
+
+# Run specific test categories
+pytest tests/unit/ -v              # Unit tests only
+pytest tests/integration/ -v       # Integration tests only
+pytest tests/e2e/ -v              # End-to-end tests only
+
+# Run tests with Israeli phone validation focus
+pytest tests/unit/test_validation.py::test_validate_israeli_phone -v
+
+# Run mobile responsiveness tests
+pytest tests/e2e/test_mobile.py -v
+```
+
+### Test Requirements Before Committing
+- [ ] All tests pass with 90%+ coverage
+- [ ] Israeli phone validation tests pass
+- [ ] URL parameter handling tests pass  
+- [ ] RTL Hebrew functionality tests pass
+- [ ] Mobile responsiveness tests pass
+- [ ] API integration tests pass (both mock and real modes)
+- [ ] Translation loading tests pass
+- [ ] User flow tests pass (new user and existing user)
+
+## 📦 Import Organization
+```python
+# Standard library
+import json
+import re
+from typing import List, Optional, Dict, Any
+from dataclasses import dataclass
+
+# Third party
+import streamlit as st
+import requests
+from supabase import create_client
+
+# Local imports
+from app.utils.models import UserData, Category
+from app.utils.i18n import t
+from app.utils.validation import validate_user_data
+```
+
+## 🎯 Performance Rules
+
+### Caching
+- Cache Supabase data in session state
+- Use `@st.cache_data` for expensive operations
+- Implement lazy loading for images
+
+### State Management
+- Minimize `st.rerun()` calls
+- Use efficient state updates
+- Clear unused session state
+
+## 📁 Asset Management
+
+### Image and Media Files
+- Store all images in `assets/images/` directory
+- Use PNG format for banners and icons
+- Optimize images for web (compress, appropriate dimensions)
+- Provide alt text for accessibility: `st.image("path", alt="Description")`
+
+### Asset Organization
+```
+assets/
+├── images/
+│   ├── banner.png              # Header banner
+│   ├── categories/             # Category images
+│   │   ├── lighting.png
+│   │   ├── cleaning.png
+│   │   └── maintenance.png
+│   ├── streets/                # Street images
+│   └── icons/                  # UI icons
+├── translations/               # Language files
+│   ├── he.json
+│   ├── en.json
+│   ├── fr.json
+│   └── ru.json
+└── styles/                     # Custom CSS (if needed)
+    └── rtl.css
+```
+
+### Image Loading Best Practices
+```python
+# Use lazy loading for better performance
+@st.cache_data
+def load_image(image_path: str):
+    """Cache images for better performance."""
+    return Image.open(image_path)
+
+# Always provide fallback for missing images
+def display_category_image(category: Category):
+    try:
+        st.image(category.image_url, use_container_width=True, alt=category.name)
+    except:
+        st.image("assets/images/placeholder.png", use_container_width=True, alt="No image")
+```
+
+## 🔐 Security and Data Protection
+
+### Input Sanitization
+```python
+import html
+
+def sanitize_input(user_input: str) -> str:
+    """Sanitize user input to prevent XSS."""
+    return html.escape(user_input.strip())
+
+def validate_and_sanitize_form_data(form_data: dict) -> dict:
+    """Validate and sanitize all form inputs."""
+    sanitized = {}
+    for key, value in form_data.items():
+        if isinstance(value, str):
+            sanitized[key] = sanitize_input(value)
+        else:
+            sanitized[key] = value
+    return sanitized
+```
+
+### Data Validation Security
+- NEVER trust user input - always validate
+- Use whitelist validation for critical fields
+- Implement rate limiting for API calls
+- Validate file uploads (if implemented in future)
+
+### Local Storage Security
+```python
+def secure_storage_operations():
+    """Security guidelines for localStorage."""
+    # Only store non-sensitive data
+    # Encrypt sensitive data before storage (if needed)
+    # Implement data expiration for user data
+    # Clear sensitive data on logout/error
+```
+
+### API Security Patterns
+```python
+def secure_api_call(data: dict) -> dict:
+    """Secure API call with proper error handling."""
+    try:
+        # Validate data before sending
+        validated_data = validate_api_payload(data)
+        
+        # Use proper headers and authentication
+        headers = get_secure_headers()
+        
+        # Make request with timeout
+        response = requests.post(
+            API_ENDPOINT,
+            data=validated_data,
+            headers=headers,
+            timeout=30,
+            verify=True  # Always verify SSL
+        )
+        
+        # Validate response before processing
+        return validate_api_response(response)
+        
+    except Exception as e:
+        logger.error(f"Secure API call failed: {e}")
+        raise APISecurityError("API call failed security validation")
+```
+
+### Security Checklist
+- [ ] All user inputs are sanitized and validated
+- [ ] API calls use HTTPS only
+- [ ] Sensitive data is not logged
+- [ ] Error messages don't expose system details
+- [ ] Rate limiting is implemented for API calls
+- [ ] SQL injection protection (Supabase handles this)
+- [ ] XSS prevention through input sanitization
+- [ ] CSRF protection through proper headers
+
+## ♿ Accessibility Guidelines
+
+### ARIA Labels and Screen Reader Support
+```python
+# Always provide proper ARIA labels
+st.text_input(
+    label=t("forms.first_name", lang),
+    key="first_name_input",
+    help=t("forms.first_name_help", lang),
+    # Streamlit automatically handles basic ARIA
+)
+
+# For custom components, add ARIA attributes
+st.markdown("""
+<button aria-label="Submit form" role="button">
+    {submit_text}
+</button>
+""".format(submit_text=t("common.submit", lang)), unsafe_allow_html=True)
+```
+
+### Keyboard Navigation
+- Ensure all interactive elements are keyboard accessible
+- Use proper tab order with `tabindex` if needed
+- Provide keyboard shortcuts for common actions
+- Test navigation with Tab, Enter, and arrow keys
+
+### Color and Contrast
+- Ensure sufficient color contrast (WCAG AA: 4.5:1 ratio)
+- Don't rely on color alone to convey information
+- Use additional indicators (icons, text) alongside color
+- Test with color blindness simulators
+
+### Hebrew RTL Accessibility
+```python
+def apply_rtl_accessibility(lang: str):
+    """Apply RTL-specific accessibility features."""
+    if lang == "he":
+        st.markdown("""
+        <style>
+        .stApp {
+            direction: rtl;
+            text-align: right;
+        }
+        
+        /* Ensure proper focus order for RTL */
+        .stButton:focus {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
+        }
+        
+        /* Screen reader support for RTL */
+        [dir="rtl"] .sr-only {
+            direction: rtl;
+            text-align: right;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+```
+
+### Accessibility Checklist
+- [ ] All images have descriptive alt text
+- [ ] Form fields have proper labels and help text
+- [ ] Error messages are clearly associated with fields
+- [ ] Focus indicators are visible and clear
+- [ ] Color contrast meets WCAG AA standards
+- [ ] Keyboard navigation works throughout the app
+- [ ] Screen reader testing completed
+- [ ] RTL layout works with assistive technologies
+
+## 🔄 Git and Development
+
+### Commit Standards
+- Test before committing
+- Use meaningful commit messages
+- Follow conventional commits format
+
+### File Naming
+- Use `snake_case` for all Python files
+- Component files in `components/` directory
+- Service files in `services/` directory
+- Utility files in `utils/` directory
+
+## ⚠️ Common Pitfalls to Avoid
+
+1. **DON'T** use deprecated `use_column_width` - use `use_container_width=True`
+2. **DON'T** forget to set unique `key` parameters for form elements
+3. **DON'T** forget to clear search on navigation
+4. **DON'T** skip error handling - always use try/catch
+5. **DON'T** hardcode strings - use translation keys
+6. **DON'T** forget RTL support for Hebrew
+7. **DON'T** mix debug and release configurations
+8. **DON'T** forget to validate Israeli phone numbers properly
+9. **DON'T** ignore accessibility requirements
+10. **DON'T** commit sensitive environment variables
+
+## 🚀 When Writing New Code
+
+1. **Structure**: Follow the exact project structure
+2. **Types**: Add type hints to everything
+3. **Docs**: Document all functions
+4. **Error Handling**: Wrap in try/catch
+5. **Testing**: Write tests for new functions
+6. **Mobile**: Consider mobile responsiveness
+7. **i18n**: Use translation keys, support RTL
+8. **State**: Manage session state properly
+9. **Search**: Clear search on navigation
+10. **Validation**: Use proper validation patterns
+11. **Security**: Sanitize inputs and validate data
+12. **Accessibility**: Ensure WCAG compliance 
