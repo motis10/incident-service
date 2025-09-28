@@ -1,4 +1,4 @@
-# Cloud Build optimized requirements - using compatible versions
+# Cloud Build optimized requirements - Python 3.13 compatible versions
 fastapi==0.116.1
 pydantic==2.11.9
 uvicorn[standard]==0.35.0
@@ -12,16 +12,16 @@ pytest==8.4.2
 pytest-asyncio==0.21.1
 
 # Development tools (optional for production)
-black==23.10.1
-flake8==6.1.0
-python-dotenv==1.0.0
+black==24.10.0
+flake8==7.1.1
+python-dotenv==1.0.1
 
 # File handling
 python-magic==0.4.27
-Pillow>=10.0.0
+Pillow>=11.0.0
 
 # Production server
-gunicorn==21.2.0
+gunicorn==23.0.0
 
 # Configuration
 PyYAML==6.0.1
