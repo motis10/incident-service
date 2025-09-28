@@ -1,0 +1,27 @@
+# Cloud Build optimized requirements - using compatible versions
+fastapi==0.116.1
+pydantic==2.11.9
+uvicorn[standard]==0.35.0
+
+# HTTP & Requests
+requests==2.32.5
+httpx==0.28.1
+
+# Testing (for CI/CD)
+pytest==8.4.2
+pytest-asyncio==0.21.1
+
+# Development tools (optional for production)
+black==23.10.1
+flake8==6.1.0
+python-dotenv==1.0.0
+
+# File handling
+python-magic==0.4.27
+Pillow>=10.0.0
+
+# Production server
+gunicorn==21.2.0
+
+# Configuration
+PyYAML==6.0.1
