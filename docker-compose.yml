@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # Main Netanya Incident Service
+  incident-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: netanya-incident-service
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG_MODE=true
+      - LOG_LEVEL=DEBUG
+      - ENVIRONMENT=development
+      - PORT=8000
+      - SHAREPOINT_ENDPOINT=http://mock-sharepoint:8080/api/incidents
+    volumes:
+      - ./src:/app/src:ro
+      - ./tests:/app/tests:ro
+      - ./requirements.txt:/app/requirements.txt:ro
+    depends_on:
+      - mock-sharepoint
+    networks:
+      - netanya-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Mock SharePoint Service for Development
+  mock-sharepoint:
+    build:
+      context: ./mock-services
+      dockerfile: Dockerfile
+    container_name: netanya-mock-sharepoint
+    ports:
+      - "8080:8080"
+    environment:
+      - MOCK_MODE=development
+      - LOG_LEVEL=DEBUG
+      - PORT=8080
+    networks:
+      - netanya-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Redis for caching (optional for development)
+  redis:
+    image: redis:7-alpine
+    container_name: netanya-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - netanya-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  # Nginx reverse proxy for development
+  nginx:
+    image: nginx:alpine
+    container_name: netanya-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - incident-service
+    networks:
+      - netanya-network
+    restart: unless-stopped
+
+networks:
+  netanya-network:
+    driver: bridge
+    name: netanya-development
+
+volumes:
+  redis-data:
+    driver: local

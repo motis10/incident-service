@@ -1,0 +1,49 @@
+app:
+  name: "Netanya Incident Service"
+  version: "1.0.0"
+  environment: "testing"
+  debug_mode: true
+  log_level: "DEBUG"
+  port: 8000
+
+sharepoint:
+  endpoint: "http://localhost:8080/api/incidents"
+  timeout: 10
+  retry_attempts: 1
+  mock_mode: true
+
+logging:
+  level: "DEBUG"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: null
+  console: false  # Reduce noise during testing
+
+cors:
+  allow_origins:
+    - "*"
+  allow_credentials: true
+  allow_methods:
+    - "*"
+  allow_headers:
+    - "*"
+
+rate_limiting:
+  api_requests_per_minute: 1000
+  health_requests_per_minute: 1000
+
+security:
+  enforce_https: false
+  include_docs: true
+  cors_permissive: true
+
+features:
+  health_monitoring: true
+  request_logging: false
+  error_tracking: false
+  metrics_collection: false
+
+testing:
+  fast_mode: true
+  mock_all_external: true
+  disable_auth: true
+  seed_data: true
