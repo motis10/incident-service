@@ -28,16 +28,20 @@ ENV/
 .venv/
 .env/
 
-# Environment variables
+# Environment variables (keep only env.example)
 .env
+.env.*
+env.development
 prod.env
+*.env
 
-# IDEs
+# IDEs and editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.cursor/
 
 # OS
 .DS_Store
@@ -67,6 +71,9 @@ logs/
 
 # Cloud Run
 .gcloudignore
+
+# AI/ML tools
+.kiro/
 
 # Temporary files
 tmp/
