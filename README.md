@@ -28,58 +28,72 @@ This service extracts the municipality API integration functionality from the cl
 
 2. **Start development environment**
    ```bash
-   # Copy environment template
-   cp env.example .env
-   
-   # Start all services
-   docker-compose up --build
+   # Start with development environment
+   docker-compose --env-file env.development up --build
    ```
 
 3. **Access the services**
    - Main API: http://localhost:8000
-   - API via Nginx: http://localhost
    - API Documentation: http://localhost:8000/docs (development mode only)
    - Mock SharePoint: http://localhost:8080
-   - Mock Admin: http://localhost/mock-admin
 
 ### Local Development (Alternative)
 
 1. **Install dependencies**
    ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\\Scripts\\activate
    pip install -r requirements.txt
    ```
 
 2. **Set environment variables**
    ```bash
+   export PYTHONPATH=$(pwd)/src:$PYTHONPATH
    export DEBUG_MODE=true
    export ENVIRONMENT=development
-   export LOG_LEVEL=INFO
+   export LOG_LEVEL=DEBUG
    ```
 
 3. **Run the service**
    ```bash
-   uvicorn src.app.main:app --reload --host 0.0.0.0 --port 8000
+   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```
 
 ## Environment Variables
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `DEBUG_MODE` | Enable mock responses | `true` | No |
 | `ENVIRONMENT` | Environment name | `development` | No |
-| `SHAREPOINT_ENDPOINT` | SharePoint endpoint URL | - | Production only |
-| `LOG_LEVEL` | Logging level | `INFO` | No |
+| `BUILD_TARGET` | Docker build target | `development` | Docker only |
+| `DEBUG_MODE` | Enable mock responses | `true` | No |
+| `LOG_LEVEL` | Logging level | `DEBUG` | No |
 | `PORT` | Service port | `8000` | No |
+| `SHAREPOINT_ENDPOINT` | SharePoint endpoint URL | Mock endpoint | Yes |
+| `CONTAINER_SUFFIX` | Docker container name suffix | - | Docker only |
+| `MAX_FILE_SIZE_MB` | Maximum file upload size | `10` | No |
 
-### Development Environment
+### Environment Configuration
 
-The development environment includes:
-- **Main Service**: FastAPI application with hot reload
-- **Mock SharePoint**: Simulates the NetanyaMuni API
+The service supports multiple environments through `.env` files:
 
-Copy `env.example` to `.env` and modify as needed:
+- **Development**: Use `env.development` for local development with mock services
+- **Production**: Use `prod.env` for production deployment with real SharePoint
+- **Custom**: Copy `env.example` to `.env` and customize
+
+**Development setup:**
 ```bash
+# Use pre-configured development environment
+docker-compose --env-file env.development up --build
+
+# Or create custom environment
 cp env.example .env
+# Edit .env as needed
+docker-compose up --build
+```
+
+**Production setup:**
+```bash
+docker-compose --env-file prod.env up --build
 ```
 
 ## API Endpoints
@@ -92,6 +106,9 @@ cp env.example .env
 
 ### Docker Environment
 ```bash
+# Start development environment first
+docker-compose --env-file env.development up -d
+
 # Run all tests in Docker
 docker-compose exec incident-service python -m pytest
 
@@ -118,18 +135,17 @@ pytest tests/test_basic_structure.py
 
 ### Docker Production
 
-The service uses a single multi-stage Dockerfile optimized for both development and production:
+The service uses a single multi-stage Dockerfile with environment-specific configuration:
 
 ```bash
 # Build production image
+docker-compose --env-file prod.env up --build
+
+# Or build manually
 docker build --target production -t netanya-incident-service:prod .
 
-# Run production container
-docker run -p 8000:8000 \
-  -e DEBUG_MODE=false \
-  -e ENVIRONMENT=production \
-  -e SHAREPOINT_ENDPOINT=https://www.netanya.muni.il/_layouts/15/NetanyaMuni/incidents.ashx?method=CreateNewIncident \
-  netanya-incident-service:prod
+# Run production container with environment file
+docker run -p 8000:8000 --env-file prod.env netanya-incident-service:prod
 ```
 
 ### Google Cloud Run
@@ -142,13 +158,19 @@ See `docs/DEPLOYMENT.md` for detailed deployment instructions.
 
 ## Development Status
 
-This is the initial implementation focusing on:
+**✅ Completed Features:**
 - [x] Project foundation and FastAPI setup
-- [ ] Configuration management
-- [ ] Data models and validation
-- [ ] SharePoint integration
-- [ ] File upload support
-- [ ] Production deployment
+- [x] Environment-based configuration management
+- [x] Data models and validation
+- [x] SharePoint integration with mock service
+- [x] File upload support with validation
+- [x] Docker containerization
+- [x] Comprehensive testing suite
+- [x] Health monitoring endpoints
+- [x] Production-ready deployment configuration
+
+**🔄 Current State:**
+The service is production-ready with a simplified, clean architecture. All redundant files and dependencies have been removed, creating a focused microservice for incident submission.
 
 ## License
 

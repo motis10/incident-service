@@ -10,14 +10,14 @@ This guide covers deploying the Netanya Incident Service to Google Cloud Run usi
 - Docker Desktop
 - Google Cloud SDK (`gcloud`)
 - GitHub account with repository access
-- Terraform (for infrastructure as code)
+- Terraform (for infrastructure as code - optional)
 
 ### Required Accounts & Permissions
 - Google Cloud Project with billing enabled
 - Cloud Run API enabled
 - Container Registry or Artifact Registry access
-- Secret Manager API enabled
-- GitHub repository with Actions enabled
+- Secret Manager API enabled (for production secrets)
+- GitHub repository with Actions enabled (for CI/CD)
 
 ## Environment Configuration
 
@@ -26,10 +26,13 @@ This guide covers deploying the Netanya Incident Service to Google Cloud Run usi
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
 | `ENVIRONMENT` | Deployment environment | Yes | `development` |
+| `BUILD_TARGET` | Docker build target | No | `development` |
 | `DEBUG_MODE` | Enable debug features | No | `true` |
-| `LOG_LEVEL` | Logging verbosity | No | `INFO` |
+| `LOG_LEVEL` | Logging verbosity | No | `DEBUG` |
 | `PORT` | Service port | No | `8000` |
 | `SHAREPOINT_ENDPOINT` | SharePoint API URL | Yes | - |
+| `MAX_FILE_SIZE_MB` | Maximum file upload size | No | `10` |
+| `CONTAINER_SUFFIX` | Container name suffix | No | - |
 
 ### Secret Management
 
@@ -93,8 +96,8 @@ gcloud iam service-accounts keys create key.json \
 #### Build and Push Image
 
 ```bash
-# Build Docker image
-docker build -t netanya-incident-service .
+# Build Docker image with production target
+docker build --target production -t netanya-incident-service .
 
 # Tag for registry
 docker tag netanya-incident-service gcr.io/PROJECT_ID/netanya-incident-service:latest
@@ -172,24 +175,31 @@ terraform apply \
 
 ### Environment-Specific Configuration
 
+Configuration is now managed through `.env` files rather than YAML:
+
 #### Staging Configuration
-```yaml
-# config/staging.yml
-environment: staging
-debug_mode: true
-log_level: DEBUG
-sharepoint_endpoint: https://staging-sharepoint.netanya.muni.il/api
-port: 8000
+```bash
+# Copy and modify env.example for staging
+ENVIRONMENT=staging
+BUILD_TARGET=development
+DEBUG_MODE=true
+LOG_LEVEL=DEBUG
+PORT=8000
+SHAREPOINT_ENDPOINT=https://staging-sharepoint.netanya.muni.il/api
+CONTAINER_SUFFIX=-staging
 ```
 
 #### Production Configuration
-```yaml
-# config/production.yml
-environment: production
-debug_mode: false
-log_level: INFO
-sharepoint_endpoint: ${SHAREPOINT_ENDPOINT}
-port: 8000
+```bash
+# Use prod.env for production deployment
+ENVIRONMENT=production
+BUILD_TARGET=production
+DEBUG_MODE=false
+LOG_LEVEL=INFO
+PORT=8000
+SHAREPOINT_ENDPOINT=https://www.netanya.muni.il/_layouts/15/NetanyaMuni/incidents.ashx?method=CreateNewIncident
+MAX_FILE_SIZE_MB=10
+CONTAINER_SUFFIX=-prod
 ```
 
 ### Secret Management

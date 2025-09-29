@@ -6,6 +6,7 @@ The Netanya Incident Service provides a REST API for submitting municipal incide
 
 ## Base URL
 
+- **Development**: `http://localhost:8000` (when running locally or with Docker)
 - **Production**: `https://netanya-incident-service-[hash].run.app`
 - **Staging**: `https://netanya-incident-service-staging-[hash].run.app`
 
@@ -189,7 +190,7 @@ Get basic service information.
 - WebP (.webp)
 
 ### File Size Limits
-- Maximum file size: 5MB
+- Maximum file size: 10MB (configurable via `MAX_FILE_SIZE_MB`)
 - Minimum file size: 1KB
 
 ### Security Requirements
@@ -205,9 +206,10 @@ Get basic service information.
 ## CORS Policy
 
 The service supports CORS for web applications with the following configuration:
-- **Allowed Origins**: `https://netanya.muni.il`, `https://staging.netanya.muni.il`
+- **Allowed Origins**: Configurable via `CORS_ORIGINS` environment variable
 - **Allowed Methods**: GET, POST, OPTIONS
 - **Allowed Headers**: Content-Type, Authorization, X-Requested-With
+- **Default**: Open CORS in development, restricted in production
 
 ## Response Codes
 
@@ -289,12 +291,14 @@ def submit_incident(incident_data, image_file=None):
 - Detailed error messages in responses
 - Mock SharePoint integration (no external calls)
 - Enhanced logging enabled
+- Uses mock-sharepoint service for testing
 
 ### Production Mode
 - API documentation disabled for security
 - Sanitized error messages
 - Real SharePoint integration
-- Optimized logging level
+- Optimized logging level (INFO)
+- Direct integration with Netanya municipality system
 
 ## Monitoring and Observability
 
