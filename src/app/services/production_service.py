@@ -54,12 +54,12 @@ class ProductionSharePointClient(SharePointClient):
             raise ValueError("Production SharePoint client cannot run in debug mode")
         
         # Get SharePoint endpoint (set by parent class)
-        endpoint = getattr(self, 'sharepoint_endpoint', None) or self.config_service.get_sharepoint_endpoint()
-        if not endpoint:
+        self.sharepoint_endpoint = getattr(self, 'sharepoint_endpoint', None) or self.config_service.get_sharepoint_endpoint()
+        if not self.sharepoint_endpoint:
             raise ValueError("SharePoint endpoint is required for production mode")
         
         # Validate HTTPS endpoint
-        parsed_url = urlparse(endpoint)
+        parsed_url = urlparse(self.sharepoint_endpoint)
         if parsed_url.scheme != 'https':
             if self.config.environment == 'production':
                 raise ValueError("Production mode requires HTTPS SharePoint endpoint")
