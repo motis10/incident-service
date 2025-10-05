@@ -16,7 +16,7 @@ logger = get_logger("error_handling")
 
 @dataclass
 class ErrorDetails:
-    """Detailed error information for specific fields."""
+    """Detailed error information for specific fields. """
     field: str
     message: str
     type: str
