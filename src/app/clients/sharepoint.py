@@ -178,11 +178,28 @@ class SharePointClient:
                     f"HTTP {response.status_code}: {response.text[:200]}"
                 )
             
+            # Log raw response first
+            logger.info(f"Raw SharePoint response: {response.text}")
+            
             # Parse JSON response
             try:
                 response_data = response.json()
             except ValueError as e:
                 raise SharePointError(f"Invalid JSON response: {str(e)}")
+            
+            # Log full JSON response
+            logger.info(f"Full JSON response: {response_data}")
+            
+            # Log all SharePoint response parameters
+            logger.info(
+                f"SharePoint response received: "
+                f"status_code={response.status_code}, "
+                f"ResultCode={response_data.get('ResultCode', 'N/A')}, "
+                f"ResultStatus={response_data.get('ResultStatus', 'N/A')}, "
+                f"ErrorDescription={response_data.get('ErrorDescription', 'N/A')}, "
+                f"data={response_data.get('data', 'N/A')}, "
+                f"response_size={len(response.text)} chars"
+            )
             
             # Extract SharePoint response fields
             result_code = response_data.get("ResultCode", 0)
@@ -239,8 +256,21 @@ class SharePointClient:
             logger.info(
                 f"Submitting incident to SharePoint: "
                 f"caller={payload.callerFirstName} {payload.callerLastName}, "
+                f"phone={payload.callerPhone}, "
                 f"category={payload.eventCallDesc}, "
-                f"with_file={file is not None}"
+                f"street={payload.streetName} {payload.houseNumber}, "
+                f"custom_text={payload.customText}, "
+                f"with_file={file is not None}, "
+                f"endpoint={self.endpoint_url}, "
+                f"timeout={self.timeout}s"
+            )
+            
+            # Log multipart request body details
+            logger.info(
+                f"Multipart request body: "
+                f"content_type={multipart_request.content_type}, "
+                f"body_size={len(multipart_request.body)} bytes, "
+                f"body_preview={multipart_request.body[:200].decode('utf-8', errors='ignore')}..."
             )
             
             # Make request with retries
