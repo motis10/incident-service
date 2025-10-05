@@ -37,7 +37,6 @@ FROM python:3.13-slim as base
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app/src \
-    PORT=8000 \
     PATH="/opt/venv/bin:$PATH"
 
 # Create app user for security
@@ -71,15 +70,15 @@ RUN chown -R app:app /app
 # Switch to app user
 USER app
 
-# Expose port
-EXPOSE 8000
+# Expose port 8080 for Cloud Run compatibility
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8000}/health/live || exit 1
+    CMD curl -f http://localhost:${PORT:-8080}/health/live || exit 1
 
 # Development command with auto-reload
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --reload"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --reload"]
 
 # Production stage
 FROM base as production
@@ -93,12 +92,12 @@ RUN chown -R app:app /app
 # Switch to app user
 USER app
 
-# Expose port
-EXPOSE 8000
+# Expose port 8080 for Cloud Run compatibility
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8000}/health/live || exit 1
+    CMD curl -f http://localhost:${PORT:-8080}/health/live || exit 1
 
 # Production command
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 4"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --workers 4"]
