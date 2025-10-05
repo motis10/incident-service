@@ -61,7 +61,7 @@ jobs:
         platforms: linux/amd64
     
     - name: Output image info
-      run: echo "Image pushed successfully with tags: ${{ steps.meta.outputs.tags }}"
+      run: echo "Image pushed successfully with tags" ${{ steps.meta.outputs.tags }}
 
   deploy-to-cloud-run:
     needs: build-and-push
