@@ -38,12 +38,12 @@ class ConfigService:
         
         # Parse port with validation
         try:
-            port = self._parse_int(os.getenv('PORT', '8000'))
+            port = self._parse_int(os.getenv('PORT', '8080'))
         except ConfigurationError:
             raise  # Re-raise for immediate failure
         
         log_level = os.getenv('LOG_LEVEL', 'INFO')
-        netanya_endpoint = os.getenv('NETANYA_ENDPOINT', self._get_default_netanya_endpoint())
+        netanya_endpoint = os.getenv('SHAREPOINT_ENDPOINT', self._get_default_netanya_endpoint())
         
         self._config = AppConfig(
             debug_mode=debug_mode,
@@ -105,7 +105,7 @@ class ConfigService:
             if not config.netanya_endpoint.startswith('https://'):
                 raise ConfigurationError(
                     "Production mode requires HTTPS endpoints. "
-                    f"NETANYA_ENDPOINT must start with 'https://': {config.netanya_endpoint}"
+                    f"SHAREPOINT_ENDPOINT must start with 'https://': {config.netanya_endpoint}"
                 )
         
         # Validate log level
