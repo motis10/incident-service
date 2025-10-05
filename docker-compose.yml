@@ -29,30 +29,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # Mock SharePoint Service (only for development)
-  mock-sharepoint:
-    build:
-      context: ./mock-services
-      dockerfile: Dockerfile
-    container_name: netanya-mock-sharepoint
-    ports:
-      - "8080:8080"
-    environment:
-      - MOCK_MODE=development
-      - LOG_LEVEL=DEBUG
-      - PORT=8080
-    networks:
-      - netanya-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    profiles:
-      - development
-
 networks:
   netanya-network:
     driver: bridge
