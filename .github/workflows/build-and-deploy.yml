@@ -92,7 +92,7 @@ jobs:
           --platform managed \
           --region ${{ env.REGION }} \
           --port 8080 \
-          --set-env-vars="PORT=8080,DEBUG_MODE=false,ENVIRONMENT=production,SHAREPOINT_ENDPOINT=https://www.netanya.muni.il/_layouts/15/NetanyaMuni/incidents.ashx?method=CreateNewIncident" \
+          --set-env-vars="DEBUG_MODE=false,ENVIRONMENT=production,SHAREPOINT_ENDPOINT=https://www.netanya.muni.il/_layouts/15/NetanyaMuni/incidents.ashx?method=CreateNewIncident" \
           --allow-unauthenticated \
           --memory=1Gi \
           --cpu=1 \
