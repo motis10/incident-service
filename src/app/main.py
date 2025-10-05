@@ -149,114 +149,21 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Basic health check endpoint for monitoring."""
-    service_health = health_service.check_service_health()
-    return {
-        "status": service_health.status,
-        "service": "Netanya Incident Service",
-        "version": "1.0.0",
-        "timestamp": service_health.timestamp,
-        "debug_mode": config.debug_mode,
-        "response_time_ms": service_health.response_time_ms
-    }
-
-@app.get("/health/detailed")
-async def health_detailed():
-    """Detailed health check with dependency status."""
+    """Detailed health check endpoint for monitoring and Cloud Run probes."""
     comprehensive_health = health_service.get_comprehensive_health()
+    
+    # Determine if service is healthy for Cloud Run probes
+    is_healthy = comprehensive_health.overall_status in ["healthy", "degraded"]
+    
     return {
         "overall_status": comprehensive_health.overall_status,
+        "healthy": is_healthy,
         "timestamp": comprehensive_health.timestamp,
-        "dependencies": comprehensive_health.dependencies,
         "service_info": comprehensive_health.service_info,
-        "response_time_ms": comprehensive_health.response_time_ms
+        "dependencies": comprehensive_health.dependencies,
+        "response_time_ms": comprehensive_health.response_time_ms,
+        "debug_mode": config.debug_mode
     }
-
-@app.get("/health/ready")
-async def health_readiness():
-    """Readiness probe for Cloud Run and load balancers."""
-    comprehensive_health = health_service.get_comprehensive_health()
-    
-    # Service is ready if all critical dependencies are healthy
-    is_ready = comprehensive_health.overall_status in ["healthy", "degraded"]
-    
-    status_code = status.HTTP_200_OK if is_ready else status.HTTP_503_SERVICE_UNAVAILABLE
-    
-    return JSONResponse(
-        status_code=status_code,
-        content={
-            "ready": is_ready,
-            "status": comprehensive_health.overall_status,
-            "timestamp": comprehensive_health.timestamp,
-            "dependencies": {
-                k: {"status": v["status"], "message": v["message"]}
-                for k, v in comprehensive_health.dependencies.items()
-            }
-        }
-    )
-
-@app.get("/health/live")
-async def health_liveness():
-    """Liveness probe for Cloud Run."""
-    service_health = health_service.check_service_health()
-    
-    # Service is alive if basic health check passes
-    is_alive = service_health.status in ["healthy", "degraded"]
-    
-    return {
-        "alive": is_alive,
-        "status": service_health.status,
-        "timestamp": service_health.timestamp,
-        "service": "Netanya Incident Service"
-    }
-
-@app.get("/health/production")
-async def health_production():
-    """Production-specific health check with validation."""
-    if config.debug_mode:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={"error": "Production health endpoint not available in debug mode"}
-        )
-    
-    try:
-        from app.core.production_validator import ProductionValidator
-        
-        validator = ProductionValidator()
-        validation_results = validator.validate_all()
-        summary = validator.get_validation_summary(validation_results)
-        
-        # Determine overall health based on validation
-        overall_status = "healthy" if summary["is_production_ready"] else "unhealthy"
-        response_status = status.HTTP_200_OK if summary["is_production_ready"] else status.HTTP_503_SERVICE_UNAVAILABLE
-        
-        return JSONResponse(
-            status_code=response_status,
-            content={
-                "status": overall_status,
-                "production_ready": summary["is_production_ready"],
-                "validation_summary": {
-                    "total_checks": summary["total_checks"],
-                    "errors": summary["errors"],
-                    "warnings": summary["warnings"],
-                    "passed": summary["passed"]
-                },
-                "timestamp": error_service.correlation_generator.generate(),
-                "service": "Netanya Incident Service",
-                "environment": config.environment
-            }
-        )
-        
-    except Exception as e:
-        logger.error(f"Production health check failed: {e}")
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "status": "error",
-                "error": "Production health check failed",
-                "timestamp": error_service.correlation_generator.generate()
-            }
-        )
 
 # Custom endpoints for documentation security in production mode
 if not config.debug_mode:
