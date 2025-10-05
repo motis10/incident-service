@@ -35,13 +35,13 @@ jobs:
     
     - name: Configure Docker for Artifact Registry
       run: |
-        gcloud auth configure-docker $REGION-docker.pkg.dev
+        gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
     
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$SERVICE_NAME
+        images: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}
         tags: |
           type=ref,event=branch
           type=ref,event=pr
@@ -85,10 +85,10 @@ jobs:
     
     - name: Deploy to Cloud Run
       run: |
-        gcloud run deploy $SERVICE_NAME \
-          --image $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$SERVICE_NAME:latest \
+        gcloud run deploy ${{ env.SERVICE_NAME }} \
+          --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:latest \
           --platform managed \
-          --region $REGION \
+          --region ${{ env.REGION }} \
           --port 8080 \
           --set-env-vars="PORT=8080,DEBUG_MODE=false,ENVIRONMENT=production,SHAREPOINT_ENDPOINT=https://www.netanya.muni.il/_layouts/15/NetanyaMuni/incidents.ashx?method=CreateNewIncident" \
           --allow-unauthenticated \
