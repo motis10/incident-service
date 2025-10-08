@@ -12,7 +12,8 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import cloudscraper
-import undetected_chromedriver as uc
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -391,23 +392,26 @@ class SharePointClient:
 
     def establish_session_with_selenium(self) -> None:
         """
-        Establish a session using Selenium with undetected Chrome to bypass Cloudflare.
+        Establish a session using Selenium with Chrome to bypass Cloudflare.
         This should capture the essential cookies that are set by JavaScript.
         """
         driver = None
         try:
-            logger.info("Establishing session with Selenium (undetected Chrome)...")
+            logger.info("Establishing session with Selenium (Chrome)...")
             
-            # Create undetected Chrome driver
-            options = uc.ChromeOptions()
+            # Create Chrome driver options
+            options = Options()
             options.add_argument('--headless')  # Run in headless mode for Cloud Run
             options.add_argument('--no-sandbox')
             options.add_argument('--disable-dev-shm-usage')
             options.add_argument('--disable-gpu')
             options.add_argument('--window-size=1920,1080')
             options.add_argument('--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36')
+            options.add_argument('--disable-blink-features=AutomationControlled')
+            options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            options.add_experimental_option('useAutomationExtension', False)
             
-            driver = uc.Chrome(options=options)
+            driver = webdriver.Chrome(options=options)
             
             # Step 1: Visit main domain
             logger.info("Selenium Step 1: Visiting main domain...")
