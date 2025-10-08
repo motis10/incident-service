@@ -367,6 +367,17 @@ class SharePointClient:
                 logger.info("Session established successfully with important cookies")
             else:
                 logger.warning("No important cookies received - API call may fail")
+                logger.warning("These cookies are likely set by JavaScript - trying alternative approach")
+                
+                # Try to manually set some basic cookies that might help
+                logger.info("Attempting to set basic session cookies manually...")
+                try:
+                    # Set some basic cookies that might be expected
+                    self.session.cookies.set('WSS_FullScreenMode', 'false', domain='.netanya.muni.il')
+                    self.session.cookies.set('SearchSession', 'manual-session-id', domain='.netanya.muni.il')
+                    logger.info("Set basic cookies manually")
+                except Exception as e:
+                    logger.warning(f"Failed to set manual cookies: {str(e)}")
                 
         except Exception as e:
             logger.warning(f"Failed to establish session: {str(e)}")
@@ -382,7 +393,7 @@ class SharePointClient:
         if missing_cookies:
             logger.warning(f"Missing essential cookies: {missing_cookies}")
             logger.warning("API call may fail due to missing session cookies")
-            logger.warning("Proceeding anyway - some APIs may work without these cookies")
+            logger.warning("Proceeding anyway - will attempt API call to see specific error")
         else:
             logger.info("All essential cookies present for API call")
         
