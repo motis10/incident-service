@@ -326,6 +326,36 @@ class SharePointClient:
                 allow_redirects=True
             )
             logger.info(f"Complaints page response: {complaints_response.status_code}")
+            logger.info(f"Cookies after complaints page: {dict(self.session.cookies)}")
+            
+            # Step 4: Try to access the API endpoint directly to trigger cookie setting
+            logger.info("Step 4: Trying to access API endpoint to trigger cookies...")
+            try:
+                api_test_response = self.session.get(
+                    self.endpoint_url,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+                        "Accept": "application/json, text/plain, */*",
+                        "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
+                        "Accept-Encoding": "gzip, deflate, br, zstd",
+                        "Referer": "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/PublicComplaints.aspx",
+                        "X-Requested-With": "XMLHttpRequest",
+                        "Origin": "https://www.netanya.muni.il",
+                        "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
+                        "Sec-Ch-Ua-Mobile": "?0",
+                        "Sec-Ch-Ua-Platform": '"macOS"',
+                        "Sec-Fetch-Dest": "empty",
+                        "Sec-Fetch-Mode": "cors",
+                        "Sec-Fetch-Site": "same-origin"
+                    },
+                    timeout=self.timeout,
+                    allow_redirects=True
+                )
+                logger.info(f"API endpoint test response: {api_test_response.status_code}")
+                logger.info(f"Cookies after API endpoint test: {dict(self.session.cookies)}")
+            except Exception as e:
+                logger.warning(f"API endpoint test failed: {str(e)}")
+            
             logger.info(f"Final cookies: {dict(self.session.cookies)}")
             
             # Check for specific important cookies
@@ -352,11 +382,18 @@ class SharePointClient:
         if missing_cookies:
             logger.warning(f"Missing essential cookies: {missing_cookies}")
             logger.warning("API call may fail due to missing session cookies")
+            logger.warning("Proceeding anyway - some APIs may work without these cookies")
         else:
             logger.info("All essential cookies present for API call")
         
         # Log all cookies for debugging
         logger.info(f"Current session cookies: {list(self.session.cookies.keys())}")
+        
+        # If we have any cookies at all, log them
+        if self.session.cookies:
+            logger.info(f"Available cookies: {dict(self.session.cookies)}")
+        else:
+            logger.warning("No cookies captured at all - this is unusual")
 
     def submit_to_sharepoint(
         self,
