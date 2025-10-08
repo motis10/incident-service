@@ -87,22 +87,15 @@ class SharePointClient:
         """
         return {
             "Origin": "https://www.netanya.muni.il",
-            "Referer": "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/default.aspx",
+            "Referer": "https://www.netanya.muni.il/PublicComplaints.aspx",
             "X-Requested-With": "XMLHttpRequest",
             "Content-Type": "multipart/form-data",  # Will be updated with boundary
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (compatible; NetanyaIncidentService/1.0)",
             "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
-            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
+            "Accept-Encoding": "gzip, deflate, br",
             "Cache-Control": "no-cache",
-            "Pragma": "no-cache",
-            "Dnt": "1",
-            "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
-            "Sec-Ch-Ua-Mobile": "?0",
-            "Sec-Ch-Ua-Platform": '"macOS"',
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-origin"
+            "Pragma": "no-cache"
         }
     
     def generate_webkit_boundary(self) -> str:
