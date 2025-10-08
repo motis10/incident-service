@@ -249,9 +249,9 @@ class SharePointClient:
         try:
             logger.info("Establishing session with SharePoint...")
             
-            # First, visit the main page to get cookies
+            # First, visit the main services page to get cookies
             session_response = self.session.get(
-                "https://www.netanya.muni.il/PublicComplaints.aspx",
+                "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/default.aspx",
                 headers={
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
