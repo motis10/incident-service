@@ -58,7 +58,7 @@ class SharePointClient:
     def __init__(
         self,
         endpoint_url: Optional[str] = None,
-        timeout: int = 30,
+        timeout: int = 60,
         max_retries: int = 3
     ):
         """
@@ -91,7 +91,7 @@ class SharePointClient:
         Returns:
             Dictionary of required headers
         """
-        return {
+        headers = {
             "Origin": "https://www.netanya.muni.il",
             "Referer": "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/PublicComplaints.aspx",
             "X-Requested-With": "XMLHttpRequest",
@@ -101,6 +101,14 @@ class SharePointClient:
             "Accept-Language": "en-US,en;q=0.9",
             "Accept-Encoding": "gzip, deflate, br"
         }
+        
+        # Add cookies from the session if available
+        if self.session.cookies:
+            cookie_string = "; ".join([f"{name}={value}" for name, value in self.session.cookies.items()])
+            headers["Cookie"] = cookie_string
+            logger.info(f"Added cookies to headers: {cookie_string}")
+        
+        return headers
     
     def generate_webkit_boundary(self) -> str:
         """
@@ -428,16 +436,8 @@ class SharePointClient:
             options.add_argument('--disable-plugins')
             options.add_argument('--disable-images')  # Speed up loading
             
-            # Create WebDriver with user agent capability
-            from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-            caps = DesiredCapabilities.CHROME.copy()
-            caps['goog:chromeOptions'] = {
-                'args': [f'--user-agent={user_agent}'],
-                'excludeSwitches': ['enable-automation'],
-                'useAutomationExtension': False
-            }
-            
-            driver = webdriver.Chrome(options=options, desired_capabilities=caps)
+            # Create WebDriver (desired_capabilities is deprecated in newer Selenium)
+            driver = webdriver.Chrome(options=options)
             
             # Step 1: Visit main domain
             logger.info("Selenium Step 1: Visiting main domain...")
