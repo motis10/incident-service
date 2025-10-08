@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import cloudscraper
 
 from app.core.logging import get_logger
 from app.models.sharepoint import APIPayload
@@ -67,8 +68,8 @@ class SharePointClient:
         self.timeout = timeout
         self.max_retries = max_retries
         
-        # Configure requests session with retries
-        self.session = requests.Session()
+        # Configure cloudscraper session with retries (bypasses Cloudflare)
+        self.session = cloudscraper.create_scraper()
         retry_strategy = Retry(
             total=max_retries,
             backoff_factor=1,
