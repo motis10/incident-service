@@ -241,15 +241,16 @@ class SharePointClient:
     
     def establish_session(self) -> None:
         """
-        Establish a session with SharePoint by visiting the main page first.
+        Establish a session with SharePoint by visiting multiple pages to capture cookies.
         This helps with Cloudflare cookie requirements and gets proper session cookies.
         """
         try:
             logger.info("Establishing session with SharePoint...")
             
-            # First, visit the main services page to get cookies
-            session_response = self.session.get(
-                "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/default.aspx",
+            # Step 1: Visit the main domain to get initial cookies
+            logger.info("Step 1: Visiting main domain...")
+            main_response = self.session.get(
+                "https://www.netanya.muni.il/",
                 headers={
                     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
                     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
@@ -270,19 +271,72 @@ class SharePointClient:
                 timeout=self.timeout,
                 allow_redirects=True
             )
+            logger.info(f"Main domain response: {main_response.status_code}")
+            logger.info(f"Cookies after main domain: {dict(self.session.cookies)}")
             
-            logger.info(f"Session establishment response: {session_response.status_code}")
-            logger.info(f"Session cookies received: {dict(self.session.cookies)}")
+            # Step 2: Visit the services page
+            logger.info("Step 2: Visiting services page...")
+            services_response = self.session.get(
+                "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/default.aspx",
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                    "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
+                    "Accept-Encoding": "gzip, deflate, br, zstd",
+                    "Cache-Control": "no-cache",
+                    "Pragma": "no-cache",
+                    "Dnt": "1",
+                    "Referer": "https://www.netanya.muni.il/",
+                    "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
+                    "Sec-Ch-Ua-Mobile": "?0",
+                    "Sec-Ch-Ua-Platform": '"macOS"',
+                    "Sec-Fetch-Dest": "document",
+                    "Sec-Fetch-Mode": "navigate",
+                    "Sec-Fetch-Site": "same-origin",
+                    "Sec-Fetch-User": "?1"
+                },
+                timeout=self.timeout,
+                allow_redirects=True
+            )
+            logger.info(f"Services page response: {services_response.status_code}")
+            logger.info(f"Cookies after services page: {dict(self.session.cookies)}")
+            
+            # Step 3: Try to visit the actual complaints page
+            logger.info("Step 3: Visiting complaints page...")
+            complaints_response = self.session.get(
+                "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/PublicComplaints.aspx",
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                    "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
+                    "Accept-Encoding": "gzip, deflate, br, zstd",
+                    "Cache-Control": "no-cache",
+                    "Pragma": "no-cache",
+                    "Dnt": "1",
+                    "Referer": "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/default.aspx",
+                    "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
+                    "Sec-Ch-Ua-Mobile": "?0",
+                    "Sec-Ch-Ua-Platform": '"macOS"',
+                    "Sec-Fetch-Dest": "document",
+                    "Sec-Fetch-Mode": "navigate",
+                    "Sec-Fetch-Site": "same-origin",
+                    "Sec-Fetch-User": "?1"
+                },
+                timeout=self.timeout,
+                allow_redirects=True
+            )
+            logger.info(f"Complaints page response: {complaints_response.status_code}")
+            logger.info(f"Final cookies: {dict(self.session.cookies)}")
             
             # Check for specific important cookies
             important_cookies = ['_cflb', 'TRINITY_USER_DATA', 'TRINITY_USER_ID', 'SearchSession', 'WSS_FullScreenMode']
             received_cookies = [cookie for cookie in important_cookies if cookie in self.session.cookies]
             logger.info(f"Important cookies received: {received_cookies}")
             
-            if session_response.status_code == 200:
-                logger.info("Session established successfully")
+            if received_cookies:
+                logger.info("Session established successfully with important cookies")
             else:
-                logger.warning(f"Session establishment returned status {session_response.status_code}")
+                logger.warning("No important cookies received - API call may fail")
                 
         except Exception as e:
             logger.warning(f"Failed to establish session: {str(e)}")
