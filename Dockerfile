@@ -42,11 +42,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Create app user for security
 RUN groupadd -r app && useradd -r -g app app
 
-# Install minimal runtime dependencies
+# Install minimal runtime dependencies including browser automation
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
         ca-certificates \
+        wget \
+        gnupg \
+        unzip \
+        xvfb \
+        chromium \
+        chromium-driver \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy virtual environment from builder stage

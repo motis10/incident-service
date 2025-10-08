@@ -426,14 +426,9 @@ class SharePointClient:
             SharePointError: If submission fails
         """
         try:
-            # Establish session first to handle Cloudflare cookies
-            self.establish_session()
-            
-            # Small delay to allow Cloudflare to process the session
-            time.sleep(10)
-            
-            # Verify we have essential cookies
-            self.verify_session_cookies()
+            # Skip session establishment due to 403 errors from Cloudflare
+            logger.info("Skipping session establishment due to Cloudflare 403 errors")
+            logger.info("Attempting direct API call with basic headers only")
             
             # Build multipart request
             multipart_request = self.build_multipart_request(payload, file)
