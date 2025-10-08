@@ -90,7 +90,12 @@ class SharePointClient:
             "Referer": "https://www.netanya.muni.il/PublicComplaints.aspx",
             "X-Requested-With": "XMLHttpRequest",
             "Content-Type": "multipart/form-data",  # Will be updated with boundary
-            "User-Agent": "Mozilla/5.0 (compatible; NetanyaIncidentService/1.0)"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache"
         }
     
     def generate_webkit_boundary(self) -> str:
@@ -236,6 +241,40 @@ class SharePointClient:
         except Exception as e:
             raise SharePointError(f"Failed to parse SharePoint response: {str(e)}")
     
+    def establish_session(self) -> None:
+        """
+        Establish a session with SharePoint by visiting the main page first.
+        This helps with Cloudflare cookie requirements.
+        """
+        try:
+            logger.info("Establishing session with SharePoint...")
+            
+            # First, visit the main page to get cookies
+            session_response = self.session.get(
+                "https://www.netanya.muni.il/PublicComplaints.aspx",
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                    "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Cache-Control": "no-cache",
+                    "Pragma": "no-cache"
+                },
+                timeout=self.timeout
+            )
+            
+            logger.info(f"Session establishment response: {session_response.status_code}")
+            logger.info(f"Session cookies: {dict(self.session.cookies)}")
+            
+            if session_response.status_code == 200:
+                logger.info("Session established successfully")
+            else:
+                logger.warning(f"Session establishment returned status {session_response.status_code}")
+                
+        except Exception as e:
+            logger.warning(f"Failed to establish session: {str(e)}")
+            # Continue anyway - some APIs work without pre-session
+
     def submit_to_sharepoint(
         self,
         payload: APIPayload,
@@ -255,6 +294,12 @@ class SharePointClient:
             SharePointError: If submission fails
         """
         try:
+            # Establish session first to handle Cloudflare cookies
+            self.establish_session()
+            
+            # Small delay to allow Cloudflare to process the session
+            time.sleep(1)
+            
             # Build multipart request
             multipart_request = self.build_multipart_request(payload, file)
             
