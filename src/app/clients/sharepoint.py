@@ -11,7 +11,6 @@ from dataclasses import dataclass
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import cloudscraper
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -74,8 +73,8 @@ class SharePointClient:
         self.timeout = timeout
         self.max_retries = max_retries
         
-        # Configure cloudscraper session with retries (bypasses Cloudflare)
-        self.session = cloudscraper.create_scraper()
+        # Configure requests session with retries
+        self.session = requests.Session()
         retry_strategy = Retry(
             total=max_retries,
             backoff_factor=1,
