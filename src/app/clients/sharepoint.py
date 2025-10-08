@@ -87,15 +87,22 @@ class SharePointClient:
         """
         return {
             "Origin": "https://www.netanya.muni.il",
-            "Referer": "https://www.netanya.muni.il/PublicComplaints.aspx",
+            "Referer": "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/default.aspx",
             "X-Requested-With": "XMLHttpRequest",
             "Content-Type": "multipart/form-data",  # Will be updated with boundary
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
             "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
-            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
             "Cache-Control": "no-cache",
-            "Pragma": "no-cache"
+            "Pragma": "no-cache",
+            "Dnt": "1",
+            "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"macOS"',
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin"
         }
     
     def generate_webkit_boundary(self) -> str:
@@ -244,7 +251,7 @@ class SharePointClient:
     def establish_session(self) -> None:
         """
         Establish a session with SharePoint by visiting the main page first.
-        This helps with Cloudflare cookie requirements.
+        This helps with Cloudflare cookie requirements and gets proper session cookies.
         """
         try:
             logger.info("Establishing session with SharePoint...")
@@ -253,18 +260,33 @@ class SharePointClient:
             session_response = self.session.get(
                 "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/default.aspx",
                 headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                    "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
-                    "Accept-Encoding": "gzip, deflate, br",
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                    "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
+                    "Accept-Encoding": "gzip, deflate, br, zstd",
                     "Cache-Control": "no-cache",
-                    "Pragma": "no-cache"
+                    "Pragma": "no-cache",
+                    "Dnt": "1",
+                    "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
+                    "Sec-Ch-Ua-Mobile": "?0",
+                    "Sec-Ch-Ua-Platform": '"macOS"',
+                    "Sec-Fetch-Dest": "document",
+                    "Sec-Fetch-Mode": "navigate",
+                    "Sec-Fetch-Site": "none",
+                    "Sec-Fetch-User": "?1",
+                    "Upgrade-Insecure-Requests": "1"
                 },
-                timeout=self.timeout
+                timeout=self.timeout,
+                allow_redirects=True
             )
             
             logger.info(f"Session establishment response: {session_response.status_code}")
-            logger.info(f"Session cookies: {dict(self.session.cookies)}")
+            logger.info(f"Session cookies received: {dict(self.session.cookies)}")
+            
+            # Check for specific important cookies
+            important_cookies = ['_cflb', 'TRINITY_USER_DATA', 'TRINITY_USER_ID', 'SearchSession', 'WSS_FullScreenMode']
+            received_cookies = [cookie for cookie in important_cookies if cookie in self.session.cookies]
+            logger.info(f"Important cookies received: {received_cookies}")
             
             if session_response.status_code == 200:
                 logger.info("Session established successfully")
@@ -274,6 +296,22 @@ class SharePointClient:
         except Exception as e:
             logger.warning(f"Failed to establish session: {str(e)}")
             # Continue anyway - some APIs work without pre-session
+
+    def verify_session_cookies(self) -> None:
+        """
+        Verify that we have the essential cookies for SharePoint API calls.
+        """
+        essential_cookies = ['_cflb', 'TRINITY_USER_DATA', 'TRINITY_USER_ID']
+        missing_cookies = [cookie for cookie in essential_cookies if cookie not in self.session.cookies]
+        
+        if missing_cookies:
+            logger.warning(f"Missing essential cookies: {missing_cookies}")
+            logger.warning("API call may fail due to missing session cookies")
+        else:
+            logger.info("All essential cookies present for API call")
+        
+        # Log all cookies for debugging
+        logger.info(f"Current session cookies: {list(self.session.cookies.keys())}")
 
     def submit_to_sharepoint(
         self,
@@ -299,6 +337,9 @@ class SharePointClient:
             
             # Small delay to allow Cloudflare to process the session
             time.sleep(1)
+            
+            # Verify we have essential cookies
+            self.verify_session_cookies()
             
             # Build multipart request
             multipart_request = self.build_multipart_request(payload, file)
