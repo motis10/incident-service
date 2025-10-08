@@ -399,35 +399,35 @@ class SharePointClient:
         try:
             logger.info("Establishing session with Selenium (Chrome)...")
             
-                # Create Chrome driver options
-                options = Options()
-                options.add_argument('--headless')  # Run in headless mode for Cloud Run
-                options.add_argument('--no-sandbox')
-                options.add_argument('--disable-dev-shm-usage')
-                options.add_argument('--disable-gpu')
-                options.add_argument('--window-size=1920,1080')
-                
-                # Set realistic Chrome user agent
-                user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
-                options.add_argument(f'--user-agent={user_agent}')
-                options.add_argument('--disable-blink-features=AutomationControlled')
-                options.add_experimental_option("excludeSwitches", ["enable-automation"])
-                options.add_experimental_option('useAutomationExtension', False)
-                
-                # Add unique user data directory to avoid conflicts
-                import tempfile
-                import os
-                temp_dir = tempfile.mkdtemp(prefix='selenium_chrome_')
-                options.add_argument(f'--user-data-dir={temp_dir}')
-                options.add_argument('--disable-web-security')
-                options.add_argument('--disable-features=VizDisplayCompositor')
-                
-                # Enable JavaScript (essential for Cloudflare)
-                options.add_argument('--enable-javascript')
-                options.add_argument('--enable-scripts')
-                options.add_argument('--disable-extensions')
-                options.add_argument('--disable-plugins')
-                options.add_argument('--disable-images')  # Speed up loading
+            # Create Chrome driver options
+            options = Options()
+            options.add_argument('--headless')  # Run in headless mode for Cloud Run
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-dev-shm-usage')
+            options.add_argument('--disable-gpu')
+            options.add_argument('--window-size=1920,1080')
+            
+            # Set realistic Chrome user agent
+            user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+            options.add_argument(f'--user-agent={user_agent}')
+            options.add_argument('--disable-blink-features=AutomationControlled')
+            options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            options.add_experimental_option('useAutomationExtension', False)
+            
+            # Add unique user data directory to avoid conflicts
+            import tempfile
+            import os
+            temp_dir = tempfile.mkdtemp(prefix='selenium_chrome_')
+            options.add_argument(f'--user-data-dir={temp_dir}')
+            options.add_argument('--disable-web-security')
+            options.add_argument('--disable-features=VizDisplayCompositor')
+            
+            # Enable JavaScript (essential for Cloudflare)
+            options.add_argument('--enable-javascript')
+            options.add_argument('--enable-scripts')
+            options.add_argument('--disable-extensions')
+            options.add_argument('--disable-plugins')
+            options.add_argument('--disable-images')  # Speed up loading
             
             # Create WebDriver with user agent capability
             from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
