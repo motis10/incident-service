@@ -143,7 +143,8 @@ class ProductionSharePointClient(SharePointClient):
             logger.error(
                 f"SharePoint submission failed [correlation_id: {correlation_id}]: "
                 f"error_type={type(e).__name__}, duration={duration:.2f}s, "
-                f"status_code={getattr(e, 'status_code', 'unknown')}"
+                f"status_code={getattr(e, 'status_code', 'unknown')}, "
+                f"error_message={str(e)}"
             )
             
             # Record error metrics

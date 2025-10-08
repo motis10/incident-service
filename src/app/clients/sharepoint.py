@@ -256,10 +256,9 @@ class SharePointClient:
             logger.info(
                 f"Submitting incident to SharePoint: "
                 f"caller={payload.callerFirstName} {payload.callerLastName}, "
-                f"phone={payload.callerPhone}, "
+                f"phone={payload.callerPhone1}, "
                 f"category={payload.eventCallDesc}, "
-                f"street={payload.streetName} {payload.houseNumber}, "
-                f"custom_text={payload.customText}, "
+                f"street={payload.streetDesc} {payload.houseNumber}, "
                 f"with_file={file is not None}, "
                 f"endpoint={self.endpoint_url}, "
                 f"timeout={self.timeout}s"
@@ -270,8 +269,12 @@ class SharePointClient:
                 f"Multipart request body: "
                 f"content_type={multipart_request.content_type}, "
                 f"body_size={len(multipart_request.body)} bytes, "
-                f"body_preview={multipart_request.body[:200].decode('utf-8', errors='ignore')}..."
+                f"body_preview={multipart_request.body[:1000].decode('utf-8', errors='ignore')}..."
             )
+            
+            # Log full request details for debugging
+            logger.info(f"Full request headers: {headers}")
+            logger.info(f"Full request body: {multipart_request.body.decode('utf-8', errors='ignore')}")
             
             # Make request with retries
             try:
