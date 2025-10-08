@@ -12,6 +12,11 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import cloudscraper
+import undetected_chromedriver as uc
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
 from app.core.logging import get_logger
 from app.models.sharepoint import APIPayload
@@ -384,6 +389,76 @@ class SharePointClient:
             logger.warning(f"Failed to establish session: {str(e)}")
             # Continue anyway - some APIs work without pre-session
 
+    def establish_session_with_selenium(self) -> None:
+        """
+        Establish a session using Selenium with undetected Chrome to bypass Cloudflare.
+        This should capture the essential cookies that are set by JavaScript.
+        """
+        driver = None
+        try:
+            logger.info("Establishing session with Selenium (undetected Chrome)...")
+            
+            # Create undetected Chrome driver
+            options = uc.ChromeOptions()
+            options.add_argument('--headless')  # Run in headless mode for Cloud Run
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-dev-shm-usage')
+            options.add_argument('--disable-gpu')
+            options.add_argument('--window-size=1920,1080')
+            options.add_argument('--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36')
+            
+            driver = uc.Chrome(options=options)
+            
+            # Step 1: Visit main domain
+            logger.info("Selenium Step 1: Visiting main domain...")
+            driver.get("https://www.netanya.muni.il/")
+            time.sleep(3)  # Wait for page to load and cookies to be set
+            
+            # Step 2: Visit services page
+            logger.info("Selenium Step 2: Visiting services page...")
+            driver.get("https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/default.aspx")
+            time.sleep(3)
+            
+            # Step 3: Visit complaints page
+            logger.info("Selenium Step 3: Visiting complaints page...")
+            driver.get("https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/PublicComplaints.aspx")
+            time.sleep(3)
+            
+            # Extract cookies from Selenium and add to requests session
+            selenium_cookies = driver.get_cookies()
+            logger.info(f"Selenium captured {len(selenium_cookies)} cookies")
+            
+            # Add cookies to requests session
+            for cookie in selenium_cookies:
+                self.session.cookies.set(
+                    cookie['name'], 
+                    cookie['value'], 
+                    domain=cookie.get('domain', '.netanya.muni.il'),
+                    path=cookie.get('path', '/')
+                )
+            
+            logger.info(f"Added cookies to requests session: {dict(self.session.cookies)}")
+            
+            # Check for essential cookies
+            essential_cookies = ['_cflb', 'TRINITY_USER_DATA', 'TRINITY_USER_ID', 'SearchSession', 'WSS_FullScreenMode']
+            received_cookies = [cookie for cookie in essential_cookies if cookie in self.session.cookies]
+            logger.info(f"Essential cookies captured by Selenium: {received_cookies}")
+            
+            if received_cookies:
+                logger.info("Selenium session establishment successful with essential cookies")
+            else:
+                logger.warning("Selenium captured cookies but not the essential ones")
+                
+        except Exception as e:
+            logger.error(f"Selenium session establishment failed: {str(e)}")
+            logger.error(f"Error details: {e.__dict__}")
+        finally:
+            if driver:
+                try:
+                    driver.quit()
+                except Exception as e:
+                    logger.warning(f"Failed to close Selenium driver: {str(e)}")
+
     def verify_session_cookies(self) -> None:
         """
         Verify that we have the essential cookies for SharePoint API calls.
@@ -426,9 +501,11 @@ class SharePointClient:
             SharePointError: If submission fails
         """
         try:
-            # Skip session establishment due to 403 errors from Cloudflare
-            logger.info("Skipping session establishment due to Cloudflare 403 errors")
-            logger.info("Attempting direct API call with basic headers only")
+            # Use Selenium to establish session and capture cookies
+            self.establish_session_with_selenium()
+            
+            # Verify we have essential cookies
+            self.verify_session_cookies()
             
             # Build multipart request
             multipart_request = self.build_multipart_request(payload, file)
