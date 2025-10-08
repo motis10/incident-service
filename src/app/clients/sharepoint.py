@@ -174,21 +174,31 @@ class SharePointClient:
         try:
             # Check HTTP status
             if response.status_code != 200:
+                logger.error(f"HTTP error response: {response.status_code}")
+                logger.error(f"Error response headers: {dict(response.headers)}")
+                logger.error(f"Error response body: {response.text}")
+                logger.error(f"Error response content length: {len(response.content)} bytes")
                 raise SharePointError(
                     f"HTTP {response.status_code}: {response.text[:200]}"
                 )
             
-            # Log raw response first
-            logger.info(f"Raw SharePoint response: {response.text}")
+            # Log comprehensive response details
+            logger.info(f"SharePoint response status: {response.status_code}")
+            logger.info(f"SharePoint response headers: {dict(response.headers)}")
+            logger.info(f"Raw SharePoint response body: {response.text}")
+            logger.info(f"Response content length: {len(response.content)} bytes")
+            logger.info(f"Response encoding: {response.encoding}")
             
             # Parse JSON response
             try:
                 response_data = response.json()
             except ValueError as e:
+                logger.error(f"Failed to parse JSON response: {str(e)}")
+                logger.error(f"Response text that failed to parse: {response.text}")
                 raise SharePointError(f"Invalid JSON response: {str(e)}")
             
             # Log full JSON response
-            logger.info(f"Full JSON response: {response_data}")
+            logger.info(f"Parsed JSON response: {response_data}")
             
             # Log all SharePoint response parameters
             logger.info(
@@ -288,6 +298,9 @@ class SharePointClient:
                 logger.error(f"Network request failed: {type(e).__name__}: {str(e)}")
                 logger.error(f"Request details: url={self.endpoint_url}, timeout={self.timeout}")
                 logger.error(f"Request headers: {headers}")
+                logger.error(f"Request body size: {len(multipart_request.body)} bytes")
+                logger.error(f"Request body preview: {multipart_request.body[:500].decode('utf-8', errors='ignore')}")
+                logger.error(f"Exception details: {e.__dict__}")
                 raise SharePointError(f"Network error: {str(e)}")
             
             # Parse and return response
