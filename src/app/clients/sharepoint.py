@@ -285,6 +285,9 @@ class SharePointClient:
                     timeout=self.timeout
                 )
             except requests.exceptions.RequestException as e:
+                logger.error(f"Network request failed: {type(e).__name__}: {str(e)}")
+                logger.error(f"Request details: url={self.endpoint_url}, timeout={self.timeout}")
+                logger.error(f"Request headers: {headers}")
                 raise SharePointError(f"Network error: {str(e)}")
             
             # Parse and return response
@@ -301,4 +304,7 @@ class SharePointClient:
         except SharePointError:
             raise
         except Exception as e:
+            logger.error(f"Unexpected error during SharePoint submission: {type(e).__name__}: {str(e)}")
+            logger.error(f"Error details: {e.__dict__}")
+            logger.error(f"Request context: endpoint={self.endpoint_url}, payload={payload}")
             raise SharePointError(f"Unexpected error during SharePoint submission: {str(e)}")

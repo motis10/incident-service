@@ -147,6 +147,7 @@ class IncidentService:
                 logger.error(
                     f"SharePoint submission failed [correlation_id: {correlation_id}]: {str(e)}"
                 )
+                logger.error(f"SharePoint error details [correlation_id: {correlation_id}]: {e.__dict__}")
                 raise IncidentSubmissionError(f"SharePoint submission failed: {str(e)}")
             
         except IncidentSubmissionError:
@@ -154,6 +155,8 @@ class IncidentService:
             raise
         except Exception as e:
             logger.error(
-                f"Unexpected error during incident submission [correlation_id: {correlation_id}]: {str(e)}"
+                f"Unexpected error during incident submission [correlation_id: {correlation_id}]: {type(e).__name__}: {str(e)}"
             )
+            logger.error(f"Error details [correlation_id: {correlation_id}]: {e.__dict__}")
+            logger.error(f"Request context [correlation_id: {correlation_id}]: incident_request={incident_request}")
             raise IncidentSubmissionError(f"Incident submission failed: {str(e)}")

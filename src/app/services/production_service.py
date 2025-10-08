@@ -138,7 +138,7 @@ class ProductionSharePointClient(SharePointClient):
             return response
             
         except SharePointError as e:
-            # Production error logging (sanitized)
+            # Production error logging (detailed)
             duration = (datetime.now(timezone.utc) - start_time).total_seconds()
             logger.error(
                 f"SharePoint submission failed [correlation_id: {correlation_id}]: "
@@ -146,6 +146,15 @@ class ProductionSharePointClient(SharePointClient):
                 f"status_code={getattr(e, 'status_code', 'unknown')}, "
                 f"error_message={str(e)}"
             )
+            
+            # Log detailed error information for debugging
+            logger.error(f"Detailed error info [correlation_id: {correlation_id}]: {e.__dict__}")
+            
+            # Log the payload that caused the error
+            logger.error(f"Payload that failed [correlation_id: {correlation_id}]: {payload}")
+            
+            # Log endpoint and headers used
+            logger.error(f"Request details [correlation_id: {correlation_id}]: endpoint={self.endpoint_url}, timeout={self.timeout}")
             
             # Record error metrics
             self._record_metrics("sharepoint_submission_error", duration, {
