@@ -406,7 +406,10 @@ class SharePointClient:
                 options.add_argument('--disable-dev-shm-usage')
                 options.add_argument('--disable-gpu')
                 options.add_argument('--window-size=1920,1080')
-                options.add_argument('--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36')
+                
+                # Set realistic Chrome user agent
+                user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+                options.add_argument(f'--user-agent={user_agent}')
                 options.add_argument('--disable-blink-features=AutomationControlled')
                 options.add_experimental_option("excludeSwitches", ["enable-automation"])
                 options.add_experimental_option('useAutomationExtension', False)
@@ -426,7 +429,16 @@ class SharePointClient:
                 options.add_argument('--disable-plugins')
                 options.add_argument('--disable-images')  # Speed up loading
             
-            driver = webdriver.Chrome(options=options)
+            # Create WebDriver with user agent capability
+            from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+            caps = DesiredCapabilities.CHROME.copy()
+            caps['goog:chromeOptions'] = {
+                'args': [f'--user-agent={user_agent}'],
+                'excludeSwitches': ['enable-automation'],
+                'useAutomationExtension': False
+            }
+            
+            driver = webdriver.Chrome(options=options, desired_capabilities=caps)
             
             # Step 1: Visit main domain
             logger.info("Selenium Step 1: Visiting main domain...")
