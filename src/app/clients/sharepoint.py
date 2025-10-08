@@ -418,6 +418,13 @@ class SharePointClient:
                 options.add_argument(f'--user-data-dir={temp_dir}')
                 options.add_argument('--disable-web-security')
                 options.add_argument('--disable-features=VizDisplayCompositor')
+                
+                # Enable JavaScript (essential for Cloudflare)
+                options.add_argument('--enable-javascript')
+                options.add_argument('--enable-scripts')
+                options.add_argument('--disable-extensions')
+                options.add_argument('--disable-plugins')
+                options.add_argument('--disable-images')  # Speed up loading
             
             driver = webdriver.Chrome(options=options)
             
