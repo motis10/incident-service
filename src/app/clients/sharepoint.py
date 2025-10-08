@@ -429,12 +429,25 @@ class SharePointClient:
             options.add_argument('--disable-web-security')
             options.add_argument('--disable-features=VizDisplayCompositor')
             
+            # Fix permission issues in Cloud Run
+            options.add_argument('--disable-background-timer-throttling')
+            options.add_argument('--disable-backgrounding-occluded-windows')
+            options.add_argument('--disable-renderer-backgrounding')
+            options.add_argument('--disable-features=TranslateUI')
+            options.add_argument('--disable-ipc-flooding-protection')
+            options.add_argument('--single-process')  # Important for Cloud Run
+            options.add_argument('--no-zygote')  # Important for Cloud Run
+            
             # Enable JavaScript (essential for Cloudflare)
             options.add_argument('--enable-javascript')
             options.add_argument('--enable-scripts')
             options.add_argument('--disable-extensions')
             options.add_argument('--disable-plugins')
             options.add_argument('--disable-images')  # Speed up loading
+            
+            # Set environment variables for Chrome
+            os.environ['CHROME_BIN'] = '/usr/bin/chromium'
+            os.environ['CHROME_PATH'] = '/usr/bin/chromium'
             
             # Create WebDriver (desired_capabilities is deprecated in newer Selenium)
             driver = webdriver.Chrome(options=options)
@@ -538,11 +551,15 @@ class SharePointClient:
             SharePointError: If submission fails
         """
         try:
-            # Use Selenium to establish session and capture cookies
-            self.establish_session_with_selenium()
-            
-            # Verify we have essential cookies
-            self.verify_session_cookies()
+            # Try to use Selenium to establish session and capture cookies
+            try:
+                self.establish_session_with_selenium()
+                # Verify we have essential cookies
+                self.verify_session_cookies()
+            except Exception as selenium_error:
+                logger.warning(f"Selenium session establishment failed: {selenium_error}")
+                logger.warning("Proceeding without Selenium cookies - may fail due to Cloudflare protection")
+                # Continue without cookies - the request might still work
             
             # Build multipart request
             multipart_request = self.build_multipart_request(payload, file)
