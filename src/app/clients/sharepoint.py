@@ -87,15 +87,13 @@ class SharePointClient:
         """
         return {
             "Origin": "https://www.netanya.muni.il",
-            "Referer": "https://www.netanya.muni.il/PublicComplaints.aspx",
+            "Referer": "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/PublicComplaints.aspx",
             "X-Requested-With": "XMLHttpRequest",
             "Content-Type": "multipart/form-data",  # Will be updated with boundary
             "User-Agent": "Mozilla/5.0 (compatible; NetanyaIncidentService/1.0)",
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache"
+            "Accept": "application/json;odata=verbose",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br"
         }
     
     def generate_webkit_boundary(self) -> str:
@@ -329,7 +327,7 @@ class SharePointClient:
             self.establish_session()
             
             # Small delay to allow Cloudflare to process the session
-            time.sleep(1)
+            time.sleep(10)
             
             # Verify we have essential cookies
             self.verify_session_cookies()
