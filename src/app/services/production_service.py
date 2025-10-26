@@ -169,38 +169,10 @@ class ProductionSharePointClient(SharePointClient):
             # Re-raise with production-safe error message
             if self.config.environment == 'production':
                 # Sanitize error message for production
-                sanitized_message = self._sanitize_error_message(str(e))
+                sanitized_message = str(e)
                 raise SharePointError(sanitized_message)
             else:
                 raise
-    
-    def _sanitize_error_message(self, error_message: str) -> str:
-        """Sanitize error messages for production to avoid leaking sensitive data."""
-        # Remove potential sensitive information
-        sensitive_patterns = [
-            r'https?://[^\s]+',  # URLs
-            r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b',  # IP addresses
-            r'password[=:\s]\S+',  # Passwords
-            r'token[=:\s]\S+',  # Tokens
-            r'key[=:\s]\S+',  # Keys
-        ]
-        
-        import re
-        sanitized = error_message
-        for pattern in sensitive_patterns:
-            sanitized = re.sub(pattern, '[REDACTED]', sanitized, flags=re.IGNORECASE)
-        
-        # Generic error categories
-        if 'connection' in sanitized.lower():
-            return "SharePoint service connection error"
-        elif 'timeout' in sanitized.lower():
-            return "SharePoint service timeout"
-        elif 'authentication' in sanitized.lower() or 'unauthorized' in sanitized.lower():
-            return "SharePoint service authentication error"
-        elif 'validation' in sanitized.lower():
-            return "SharePoint service validation error"
-        else:
-            return "SharePoint service error"
     
     def _record_metrics(self, metric_name: str, duration: float, labels: Dict[str, Any]) -> None:
         """Record metrics for monitoring (placeholder for actual monitoring system)."""

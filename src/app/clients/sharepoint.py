@@ -479,9 +479,20 @@ class SharePointClient:
             # Set environment variables for Chrome
             os.environ['CHROME_BIN'] = '/usr/bin/chromium'
             os.environ['CHROME_PATH'] = '/usr/bin/chromium'
+            os.environ['DBUS_SESSION_BUS_ADDRESS'] = '/dev/null'
             
-            # Create WebDriver (desired_capabilities is deprecated in newer Selenium)
-            driver = webdriver.Chrome(options=options)
+            # Additional Chrome service arguments for stability
+            from selenium.webdriver.chrome.service import Service
+            service = Service()
+            service.log_path = '/tmp/chromedriver.log'
+            
+            # Create WebDriver with service and comprehensive error handling
+            try:
+                driver = webdriver.Chrome(service=service, options=options)
+                logger.info("Chrome WebDriver created successfully")
+            except Exception as driver_error:
+                logger.error(f"Failed to create Chrome WebDriver: {driver_error}")
+                raise
             
             # Step 1: Visit main domain
             logger.info("Selenium Step 1: Visiting main domain...")
