@@ -416,6 +416,7 @@ class SharePointClient:
         This should capture the essential cookies that are set by JavaScript.
         """
         driver = None
+        temp_dir = None
         try:
             logger.info("Establishing session with Selenium (Chrome)...")
             
@@ -435,8 +436,18 @@ class SharePointClient:
             options.add_experimental_option("excludeSwitches", ["enable-automation"])
             options.add_experimental_option('useAutomationExtension', False)
             
-            # Add unique user data directory to avoid conflicts
+            # Add unique user data directory to avoid conflicts and permission issues
+            import tempfile
             import os
+            temp_dir = tempfile.mkdtemp(prefix='selenium_chrome_')
+            options.add_argument(f'--user-data-dir={temp_dir}')
+            logger.info(f"Using temporary user data directory: {temp_dir}")
+            
+            # Disable cache to avoid permission issues
+            options.add_argument('--disk-cache-size=0')
+            options.add_argument('--disable-application-cache')
+            options.add_argument('--disable-gpu-process-crash-limit')
+            
             options.add_argument('--disable-web-security')
             options.add_argument('--disable-features=VizDisplayCompositor')
             
@@ -553,6 +564,15 @@ class SharePointClient:
                     driver.quit()
                 except Exception as e:
                     logger.warning(f"Failed to close Selenium driver: {str(e)}")
+            
+            # Clean up temporary directory
+            if temp_dir:
+                try:
+                    import shutil
+                    shutil.rmtree(temp_dir)
+                    logger.info(f"Cleaned up temporary directory: {temp_dir}")
+                except Exception as e:
+                    logger.warning(f"Failed to clean up temporary directory {temp_dir}: {str(e)}")
 
     def verify_session_cookies(self) -> None:
         """
