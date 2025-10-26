@@ -417,11 +417,12 @@ class SharePointClient:
             
             # Create Chrome driver options
             options = Options()
-            options.add_argument('--headless')  # Run in headless mode for Cloud Run
+            options.add_argument('--headless=new')  # Use new headless mode (more stable)
             options.add_argument('--no-sandbox')
             options.add_argument('--disable-dev-shm-usage')
             options.add_argument('--disable-gpu')
             options.add_argument('--window-size=1920,1080')
+            options.add_argument('--remote-debugging-port=9222')  # Enable remote debugging
             
             # Set realistic Chrome user agent
             user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
@@ -488,16 +489,24 @@ class SharePointClient:
             
             # Create WebDriver with service and comprehensive error handling
             try:
+                logger.info("Creating Chrome WebDriver with chromium binary...")
                 driver = webdriver.Chrome(service=service, options=options)
                 logger.info("Chrome WebDriver created successfully")
             except Exception as driver_error:
                 logger.error(f"Failed to create Chrome WebDriver: {driver_error}")
+                logger.error(f"Driver error type: {type(driver_error).__name__}")
+                logger.error(f"Driver error details: {str(driver_error)}")
                 raise
             
             # Step 1: Visit main domain
-            logger.info("Selenium Step 1: Visiting main domain...")
-            driver.get("https://www.netanya.muni.il/")
-            time.sleep(3)  # Wait for page to load and cookies to be set
+            try:
+                logger.info("Selenium Step 1: Visiting main domain...")
+                driver.get("https://www.netanya.muni.il/")
+                logger.info("Step 1: Successfully loaded main domain")
+                time.sleep(3)  # Wait for page to load and cookies to be set
+            except Exception as nav_error:
+                logger.error(f"Failed to navigate to main domain: {nav_error}")
+                raise
             
             # Step 2: Visit services page
             logger.info("Selenium Step 2: Visiting services page...")
