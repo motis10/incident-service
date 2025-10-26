@@ -447,6 +447,28 @@ class SharePointClient:
             options.add_argument('--single-process')  # Important for Cloud Run
             options.add_argument('--no-zygote')  # Important for Cloud Run
             
+            # Additional flags to prevent SIGTRAP errors in Cloud Run
+            options.add_argument('--disable-setuid-sandbox')
+            options.add_argument('--disable-software-rasterizer')
+            options.add_argument('--disable-accelerated-2d-canvas')
+            options.add_argument('--disable-accelerated-video-decode')
+            options.add_argument('--disable-background-networking')
+            options.add_argument('--disable-breakpad')
+            options.add_argument('--disable-client-side-phishing-detection')
+            options.add_argument('--disable-component-update')
+            options.add_argument('--disable-default-apps')
+            options.add_argument('--disable-domain-reliability')
+            options.add_argument('--disable-sync')
+            options.add_argument('--disable-hang-monitor')
+            options.add_argument('--disable-popup-blocking')
+            options.add_argument('--disable-prompt-on-repost')
+            options.add_argument('--metrics-recording-only')
+            options.add_argument('--no-first-run')
+            options.add_argument('--safebrowsing-disable-auto-update')
+            options.add_argument('--enable-automation')
+            options.add_argument('--password-store=basic')
+            options.add_argument('--use-mock-keychain')
+            
             # Enable JavaScript (essential for Cloudflare)
             options.add_argument('--enable-javascript')
             options.add_argument('--enable-scripts')
