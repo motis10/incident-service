@@ -436,17 +436,19 @@ class SharePointClient:
             options.add_experimental_option("excludeSwitches", ["enable-automation"])
             options.add_experimental_option('useAutomationExtension', False)
             
-            # Add unique user data directory to avoid conflicts and permission issues
-            import tempfile
-            import os
-            temp_dir = tempfile.mkdtemp(prefix='selenium_chrome_')
-            options.add_argument(f'--user-data-dir={temp_dir}')
-            logger.info(f"Using temporary user data directory: {temp_dir}")
-            
-            # Disable cache to avoid permission issues
+            # Disable cache completely to avoid permission issues
+            # Chrome still tries to write cache even without user-data-dir
             options.add_argument('--disk-cache-size=0')
             options.add_argument('--disable-application-cache')
             options.add_argument('--disable-gpu-process-crash-limit')
+            
+            # Set temp directory for Chrome to use for temporary files
+            import tempfile
+            import os
+            temp_dir = tempfile.mkdtemp(prefix='selenium_chrome_')
+            os.environ['TMPDIR'] = temp_dir
+            os.environ['XDG_RUNTIME_DIR'] = temp_dir
+            logger.info(f"Using temporary directory for Chrome temp files: {temp_dir}")
             
             options.add_argument('--disable-web-security')
             options.add_argument('--disable-features=VizDisplayCompositor')
