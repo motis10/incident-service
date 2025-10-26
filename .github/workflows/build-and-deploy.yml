@@ -92,7 +92,7 @@ jobs:
           --platform managed \
           --region ${{ env.REGION }} \
           --port 8080 \
-          --set-env-vars="DEBUG_MODE=false,ENVIRONMENT=production,SHAREPOINT_ENDPOINT=https://www.netanya.muni.il/_layouts/15/NetanyaMuni/incidents.ashx?method=CreateNewIncident,PYTHONUNBUFFERED=1,REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt" \
+          --set-env-vars="DEBUG_MODE=false,ENVIRONMENT=production,SHAREPOINT_ENDPOINT=https://www.netanya.muni.il/_layouts/15/NetanyaMuni/incidents.ashx?method=CreateNewIncident,PYTHONUNBUFFERED=1,REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt,PROXY_HTTP=http://zrvcugsw-IL-rotate:sr6u0evrhctk@p.webshare.io:80/,PROXY_HTTPS=http://zrvcugsw-IL-rotate:sr6u0evrhctk@p.webshare.io:80/" \
           --allow-unauthenticated \
           --memory=1Gi \
           --cpu=1 \
