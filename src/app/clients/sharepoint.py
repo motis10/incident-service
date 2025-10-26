@@ -78,9 +78,13 @@ class SharePointClient:
         
         # Log proxy configuration
         if self.proxies:
-            logger.info(f"SharePointClient initialized with proxy configuration: {self.proxies}")
+            logger.info(f"SharePointClient initialized WITH proxy configuration")
+            logger.info(f"  → HTTP proxy: {self.proxies.get('http', 'Not set')}")
+            logger.info(f"  → HTTPS proxy: {self.proxies.get('https', 'Not set')}")
+            logger.info(f"All requests will be routed through the configured proxy")
         else:
-            logger.info("SharePointClient initialized without proxy configuration")
+            logger.info("SharePointClient initialized WITHOUT proxy (direct connection to SharePoint)")
+            logger.info("All requests will connect directly to SharePoint API")
         
         # Configure requests session with retries
         self.session = requests.Session()
@@ -432,10 +436,7 @@ class SharePointClient:
             options.add_experimental_option('useAutomationExtension', False)
             
             # Add unique user data directory to avoid conflicts
-            import tempfile
             import os
-            temp_dir = tempfile.mkdtemp(prefix='selenium_chrome_')
-            options.add_argument(f'--user-data-dir={temp_dir}')
             options.add_argument('--disable-web-security')
             options.add_argument('--disable-features=VizDisplayCompositor')
             
@@ -552,13 +553,6 @@ class SharePointClient:
                     driver.quit()
                 except Exception as e:
                     logger.warning(f"Failed to close Selenium driver: {str(e)}")
-            # Clean up temporary directory
-            try:
-                if 'temp_dir' in locals():
-                    import shutil
-                    shutil.rmtree(temp_dir, ignore_errors=True)
-            except Exception as cleanup_error:
-                logger.warning(f"Failed to clean up temp directory: {cleanup_error}")
 
     def verify_session_cookies(self) -> None:
         """
@@ -645,6 +639,17 @@ class SharePointClient:
             
             # Make request with retries
             try:
+                # Log proxy configuration being used for this request
+                if self.proxies:
+                    logger.info(f"Making SharePoint request WITH proxy")
+                    logger.info(f"  → HTTP proxy: {self.proxies.get('http', 'Not set')}")
+                    logger.info(f"  → HTTPS proxy: {self.proxies.get('https', 'Not set')}")
+                else:
+                    logger.info("Making SharePoint request WITHOUT proxy (direct connection)")
+                
+                # Log full request details including proxy
+                logger.info(f"Request configuration: endpoint={self.endpoint_url}, timeout={self.timeout}s, proxies={self.proxies if self.proxies else 'None'}")
+                
                 response = self.session.post(
                     self.endpoint_url,
                     data=multipart_request.body,
@@ -652,13 +657,29 @@ class SharePointClient:
                     timeout=self.timeout,
                     proxies=self.proxies if self.proxies else None
                 )
+                
+                # Log successful request with proxy info
+                if self.proxies:
+                    logger.info(f"SharePoint request completed successfully THROUGH proxy: status={response.status_code}")
+                else:
+                    logger.info(f"SharePoint request completed successfully (direct): status={response.status_code}")
             except requests.exceptions.RequestException as e:
                 logger.error(f"Network request failed: {type(e).__name__}: {str(e)}")
                 logger.error(f"Request details: url={self.endpoint_url}, timeout={self.timeout}")
+                logger.error(f"Proxy configuration: {self.proxies if self.proxies else 'No proxy (direct connection)'}")
                 logger.error(f"Request headers: {headers}")
                 logger.error(f"Request body size: {len(multipart_request.body)} bytes")
                 logger.error(f"Request body preview: {multipart_request.body[:500].decode('utf-8', errors='ignore')}")
                 logger.error(f"Exception details: {e.__dict__}")
+                
+                # Additional proxy-specific error info
+                if self.proxies:
+                    logger.error(f"PROXY ERROR - Request failed while using proxy: {self.proxies}")
+                    if isinstance(e, requests.exceptions.ProxyError):
+                        logger.error(f"ProxyError detected - Cannot connect to proxy server")
+                    elif isinstance(e, requests.exceptions.ConnectTimeout):
+                        logger.error(f"Timeout connecting to proxy or destination through proxy")
+                
                 raise SharePointError(f"Network error: {str(e)}")
             
             # Parse and return response
