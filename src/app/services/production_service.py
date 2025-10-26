@@ -79,7 +79,7 @@ class ProductionSharePointClient(SharePointClient):
         
         # Enhanced headers for production
         self.session.headers.update({
-            'User-Agent': 'NetanyaIncidentService/1.0.0 (Production)',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
             'Accept': 'application/json',
             'Accept-Encoding': 'gzip, deflate',
             'Connection': 'keep-alive',
