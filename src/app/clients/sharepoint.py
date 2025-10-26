@@ -59,7 +59,8 @@ class SharePointClient:
         self,
         endpoint_url: Optional[str] = None,
         timeout: int = 60,
-        max_retries: int = 3
+        max_retries: int = 3,
+        proxies: Optional[Dict[str, str]] = None
     ):
         """
         Initialize SharePoint client.
@@ -68,10 +69,18 @@ class SharePointClient:
             endpoint_url: Custom SharePoint endpoint URL
             timeout: Request timeout in seconds
             max_retries: Maximum number of retry attempts
+            proxies: Proxy configuration dict for requests (e.g., {'http': 'http://proxy:8080', 'https': 'https://proxy:8080'})
         """
         self.endpoint_url = endpoint_url or self.DEFAULT_ENDPOINT
         self.timeout = timeout
         self.max_retries = max_retries
+        self.proxies = proxies or {}
+        
+        # Log proxy configuration
+        if self.proxies:
+            logger.info(f"SharePointClient initialized with proxy configuration: {self.proxies}")
+        else:
+            logger.info("SharePointClient initialized without proxy configuration")
         
         # Configure requests session with retries
         self.session = requests.Session()
@@ -598,7 +607,8 @@ class SharePointClient:
                     self.endpoint_url,
                     data=multipart_request.body,
                     headers=headers,
-                    timeout=self.timeout
+                    timeout=self.timeout,
+                    proxies=self.proxies if self.proxies else None
                 )
             except requests.exceptions.RequestException as e:
                 logger.error(f"Network request failed: {type(e).__name__}: {str(e)}")

@@ -3,7 +3,7 @@ Configuration service for environment-based configuration management.
 Provides environment variable validation and application configuration.
 """
 import os
-from typing import Optional
+from typing import Optional, Dict
 from dataclasses import dataclass
 
 
@@ -20,6 +20,8 @@ class AppConfig:
     port: int
     log_level: str
     netanya_endpoint: str
+    proxy_http: Optional[str] = None
+    proxy_https: Optional[str] = None
 
 
 class ConfigService:
@@ -44,13 +46,17 @@ class ConfigService:
         
         log_level = os.getenv('LOG_LEVEL', 'INFO')
         netanya_endpoint = os.getenv('SHAREPOINT_ENDPOINT', self._get_default_netanya_endpoint())
+        proxy_http = os.getenv('PROXY_HTTP')
+        proxy_https = os.getenv('PROXY_HTTPS')
         
         self._config = AppConfig(
             debug_mode=debug_mode,
             environment=environment,
             port=port,
             log_level=log_level,
-            netanya_endpoint=netanya_endpoint
+            netanya_endpoint=netanya_endpoint,
+            proxy_http=proxy_http,
+            proxy_https=proxy_https
         )
     
     def _parse_boolean(self, value: str) -> bool:
@@ -81,6 +87,16 @@ class ConfigService:
     def get_sharepoint_endpoint(self) -> str:
         """Get SharePoint endpoint URL."""
         return self.get_config().netanya_endpoint
+    
+    def get_proxy_config(self) -> Dict[str, str]:
+        """Get proxy configuration as a dictionary for requests library."""
+        config = self.get_config()
+        proxies = {}
+        if config.proxy_http:
+            proxies['http'] = config.proxy_http
+        if config.proxy_https:
+            proxies['https'] = config.proxy_https
+        return proxies
     
     def validate_environment(self) -> None:
         """Validate environment configuration and fail fast if invalid."""

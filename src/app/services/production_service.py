@@ -34,11 +34,15 @@ class ProductionSharePointClient(SharePointClient):
             max_retries: Maximum retry attempts for failed requests
             backoff_factor: Backoff factor for retries
         """
-        super().__init__(endpoint, max_retries, backoff_factor)
-        
         # Production-specific configuration
         self.config_service = ConfigService()
         self.config = self.config_service.get_config()
+        
+        # Get proxy configuration from config
+        proxies = self.config_service.get_proxy_config()
+        
+        # Initialize parent with proxy configuration
+        super().__init__(endpoint, max_retries=max_retries, proxies=proxies)
         
         # Validate production requirements
         self._validate_production_config()
