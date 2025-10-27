@@ -164,6 +164,9 @@ def test_sharepoint_response_parsing():
     mock_response.status_code = 200
     mock_response.json.return_value = success_response_json
     mock_response.text = json.dumps(success_response_json)
+    mock_response.headers = {"Content-Type": "application/json"}
+    mock_response.content = mock_response.text.encode('utf-8')
+    mock_response.encoding = "utf-8"
     
     parsed_response = client.parse_sharepoint_response(mock_response)
     
@@ -190,6 +193,9 @@ def test_sharepoint_error_response_parsing():
     mock_response.status_code = 200  # SharePoint returns 200 even for errors
     mock_response.json.return_value = error_response_json
     mock_response.text = json.dumps(error_response_json)
+    mock_response.headers = {"Content-Type": "application/json"}
+    mock_response.content = mock_response.text.encode('utf-8')
+    mock_response.encoding = "utf-8"
     
     with pytest.raises(SharePointError) as exc_info:
         client.parse_sharepoint_response(mock_response)
@@ -230,6 +236,10 @@ def test_submit_to_sharepoint_success():
         "ResultStatus": "SUCCESS CREATE",
         "data": "TICKET-67890"
     }
+    mock_response.text = json.dumps(mock_response.json.return_value)
+    mock_response.headers = {"Content-Type": "application/json"}
+    mock_response.content = mock_response.text.encode('utf-8')
+    mock_response.encoding = "utf-8"
     
     with patch.object(client.session, 'post', return_value=mock_response) as mock_post:
         result = client.submit_to_sharepoint(payload)
@@ -292,6 +302,10 @@ def test_submit_to_sharepoint_with_file():
         "ResultStatus": "SUCCESS CREATE",
         "data": "TICKET-FILE-123"
     }
+    mock_response.text = json.dumps(mock_response.json.return_value)
+    mock_response.headers = {"Content-Type": "application/json"}
+    mock_response.content = mock_response.text.encode('utf-8')
+    mock_response.encoding = "utf-8"
     
     with patch.object(client.session, 'post', return_value=mock_response) as mock_post:
         result = client.submit_to_sharepoint(payload, file=test_file)
@@ -374,6 +388,8 @@ def test_http_error_handling():
     mock_response = Mock()
     mock_response.status_code = 500
     mock_response.text = "Internal Server Error"
+    mock_response.headers = {"Content-Type": "text/html"}
+    mock_response.content = mock_response.text.encode('utf-8')
     mock_response.json.side_effect = ValueError("No JSON")
     
     with patch.object(client.session, 'post', return_value=mock_response):

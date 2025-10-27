@@ -5,27 +5,8 @@ uvicorn[standard]==0.35.0
 
 # HTTP client for SharePoint integration  
 requests==2.32.5
-requests-html==0.10.0
-selenium==4.15.2
-setuptools==75.6.0
-brotli==1.1.0
 
 # Testing dependencies
 pytest==8.4.2
 pytest-asyncio==0.21.1
 httpx==0.28.1  # For FastAPI TestClient
-
-# Development dependencies
-black==24.10.0
-flake8==7.1.1
-python-dotenv==1.0.1
-
-# File handling and validation
-python-magic==0.4.27
-Pillow>=11.0.0
-
-# Production server
-gunicorn==23.0.0
-
-# Configuration management
-PyYAML==6.0.1

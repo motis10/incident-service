@@ -11,12 +11,6 @@ from dataclasses import dataclass
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
 
 from app.core.logging import get_logger
 from app.models.sharepoint import APIPayload
@@ -266,338 +260,149 @@ class SharePointClient:
         except Exception as e:
             raise SharePointError(f"Failed to parse SharePoint response: {str(e)}")
     
-    def establish_session(self) -> None:
-        """
-        Establish a session with SharePoint by visiting multiple pages to capture cookies.
-        This helps with Cloudflare cookie requirements and gets proper session cookies.
-        """
-        try:
-            logger.info("Establishing session with SharePoint...")
+    # def establish_session(self) -> None:
+    #     """s
+    #     Establish a session with SharePoint by visiting multiple pages to capture cookies.
+    #     This helps with Cloudflare cookie requirements and gets proper session cookies.
+    #     """
+    #     try:
+    #         logger.info("Establishing session with SharePoint...")
             
-            # Step 1: Visit the main domain to get initial cookies
-            logger.info("Step 1: Visiting main domain...")
-            main_response = self.session.get(
-                "https://www.netanya.muni.il/",
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-                    "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
-                    "Accept-Encoding": "gzip, deflate, br, zstd",
-                    "Cache-Control": "no-cache",
-                    "Pragma": "no-cache",
-                    "Dnt": "1",
-                    "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
-                    "Sec-Ch-Ua-Mobile": "?0",
-                    "Sec-Ch-Ua-Platform": '"macOS"',
-                    "Sec-Fetch-Dest": "document",
-                    "Sec-Fetch-Mode": "navigate",
-                    "Sec-Fetch-Site": "none",
-                    "Sec-Fetch-User": "?1",
-                    "Upgrade-Insecure-Requests": "1"
-                },
-                timeout=self.timeout,
-                allow_redirects=True
-            )
-            logger.info(f"Main domain response: {main_response.status_code}")
-            logger.info(f"Cookies after main domain: {dict(self.session.cookies)}")
+    #         # Step 1: Visit the main domain to get initial cookies
+    #         logger.info("Step 1: Visiting main domain...")
+    #         main_response = self.session.get(
+    #             "https://www.netanya.muni.il/",
+    #             headers={
+    #                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+    #                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+    #                 "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
+    #                 "Accept-Encoding": "gzip, deflate, br, zstd",
+    #                 "Cache-Control": "no-cache",
+    #                 "Pragma": "no-cache",
+    #                 "Dnt": "1",
+    #                 "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
+    #                 "Sec-Ch-Ua-Mobile": "?0",
+    #                 "Sec-Ch-Ua-Platform": '"macOS"',
+    #                 "Sec-Fetch-Dest": "document",
+    #                 "Sec-Fetch-Mode": "navigate",
+    #                 "Sec-Fetch-Site": "none",
+    #                 "Sec-Fetch-User": "?1",
+    #                 "Upgrade-Insecure-Requests": "1"
+    #             },
+    #             timeout=self.timeout,
+    #             allow_redirects=True
+    #         )
+    #         logger.info(f"Main domain response: {main_response.status_code}")
+    #         logger.info(f"Cookies after main domain: {dict(self.session.cookies)}")
             
-            # Step 2: Visit the services page
-            logger.info("Step 2: Visiting services page...")
-            services_response = self.session.get(
-                "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/default.aspx",
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-                    "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
-                    "Accept-Encoding": "gzip, deflate, br, zstd",
-                    "Cache-Control": "no-cache",
-                    "Pragma": "no-cache",
-                    "Dnt": "1",
-                    "Referer": "https://www.netanya.muni.il/",
-                    "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
-                    "Sec-Ch-Ua-Mobile": "?0",
-                    "Sec-Ch-Ua-Platform": '"macOS"',
-                    "Sec-Fetch-Dest": "document",
-                    "Sec-Fetch-Mode": "navigate",
-                    "Sec-Fetch-Site": "same-origin",
-                    "Sec-Fetch-User": "?1"
-                },
-                timeout=self.timeout,
-                allow_redirects=True
-            )
-            logger.info(f"Services page response: {services_response.status_code}")
-            logger.info(f"Cookies after services page: {dict(self.session.cookies)}")
+    #         # Step 2: Visit the services page
+    #         logger.info("Step 2: Visiting services page...")
+    #         services_response = self.session.get(
+    #             "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/default.aspx",
+    #             headers={
+    #                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+    #                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+    #                 "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
+    #                 "Accept-Encoding": "gzip, deflate, br, zstd",
+    #                 "Cache-Control": "no-cache",
+    #                 "Pragma": "no-cache",
+    #                 "Dnt": "1",
+    #                 "Referer": "https://www.netanya.muni.il/",
+    #                 "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
+    #                 "Sec-Ch-Ua-Mobile": "?0",
+    #                 "Sec-Ch-Ua-Platform": '"macOS"',
+    #                 "Sec-Fetch-Dest": "document",
+    #                 "Sec-Fetch-Mode": "navigate",
+    #                 "Sec-Fetch-Site": "same-origin",
+    #                 "Sec-Fetch-User": "?1"
+    #             },
+    #             timeout=self.timeout,
+    #             allow_redirects=True
+    #         )
+    #         logger.info(f"Services page response: {services_response.status_code}")
+    #         logger.info(f"Cookies after services page: {dict(self.session.cookies)}")
             
-            # Step 3: Try to visit the actual complaints page
-            logger.info("Step 3: Visiting complaints page...")
-            complaints_response = self.session.get(
-                "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/PublicComplaints.aspx",
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-                    "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
-                    "Accept-Encoding": "gzip, deflate, br, zstd",
-                    "Cache-Control": "no-cache",
-                    "Pragma": "no-cache",
-                    "Dnt": "1",
-                    "Referer": "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/default.aspx",
-                    "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
-                    "Sec-Ch-Ua-Mobile": "?0",
-                    "Sec-Ch-Ua-Platform": '"macOS"',
-                    "Sec-Fetch-Dest": "document",
-                    "Sec-Fetch-Mode": "navigate",
-                    "Sec-Fetch-Site": "same-origin",
-                    "Sec-Fetch-User": "?1"
-                },
-                timeout=self.timeout,
-                allow_redirects=True
-            )
-            logger.info(f"Complaints page response: {complaints_response.status_code}")
-            logger.info(f"Cookies after complaints page: {dict(self.session.cookies)}")
+    #         # Step 3: Try to visit the actual complaints page
+    #         logger.info("Step 3: Visiting complaints page...")
+    #         complaints_response = self.session.get(
+    #             "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/PublicComplaints.aspx",
+    #             headers={
+    #                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+    #                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+    #                 "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
+    #                 "Accept-Encoding": "gzip, deflate, br, zstd",
+    #                 "Cache-Control": "no-cache",
+    #                 "Pragma": "no-cache",
+    #                 "Dnt": "1",
+    #                 "Referer": "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/default.aspx",
+    #                 "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
+    #                 "Sec-Ch-Ua-Mobile": "?0",
+    #                 "Sec-Ch-Ua-Platform": '"macOS"',
+    #                 "Sec-Fetch-Dest": "document",
+    #                 "Sec-Fetch-Mode": "navigate",
+    #                 "Sec-Fetch-Site": "same-origin",
+    #                 "Sec-Fetch-User": "?1"
+    #             },
+    #             timeout=self.timeout,
+    #             allow_redirects=True
+    #         )
+    #         logger.info(f"Complaints page response: {complaints_response.status_code}")
+    #         logger.info(f"Cookies after complaints page: {dict(self.session.cookies)}")
             
-            # Step 4: Try to access the API endpoint directly to trigger cookie setting
-            logger.info("Step 4: Trying to access API endpoint to trigger cookies...")
-            try:
-                api_test_response = self.session.get(
-                    self.endpoint_url,
-                    headers={
-                        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
-                        "Accept": "application/json, text/plain, */*",
-                        "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
-                        "Accept-Encoding": "gzip, deflate, br, zstd",
-                        "Referer": "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/PublicComplaints.aspx",
-                        "X-Requested-With": "XMLHttpRequest",
-                        "Origin": "https://www.netanya.muni.il",
-                        "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
-                        "Sec-Ch-Ua-Mobile": "?0",
-                        "Sec-Ch-Ua-Platform": '"macOS"',
-                        "Sec-Fetch-Dest": "empty",
-                        "Sec-Fetch-Mode": "cors",
-                        "Sec-Fetch-Site": "same-origin"
-                    },
-                    timeout=self.timeout,
-                    allow_redirects=True
-                )
-                logger.info(f"API endpoint test response: {api_test_response.status_code}")
-                logger.info(f"Cookies after API endpoint test: {dict(self.session.cookies)}")
-            except Exception as e:
-                logger.warning(f"API endpoint test failed: {str(e)}")
+    #         # Step 4: Try to access the API endpoint directly to trigger cookie setting
+    #         logger.info("Step 4: Trying to access API endpoint to trigger cookies...")
+    #         try:
+    #             api_test_response = self.session.get(
+    #                 self.endpoint_url,
+    #                 headers={
+    #                     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+    #                     "Accept": "application/json, text/plain, */*",
+    #                     "Accept-Language": "he-IL,he;q=0.9,en-US,en;q=0.8",
+    #                     "Accept-Encoding": "gzip, deflate, br, zstd",
+    #                     "Referer": "https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/PublicComplaints.aspx",
+    #                     "X-Requested-With": "XMLHttpRequest",
+    #                     "Origin": "https://www.netanya.muni.il",
+    #                     "Sec-Ch-Ua": '"Chromium";v="141", "Not?A_Brand";v="8"',
+    #                     "Sec-Ch-Ua-Mobile": "?0",
+    #                     "Sec-Ch-Ua-Platform": '"macOS"',
+    #                     "Sec-Fetch-Dest": "empty",
+    #                     "Sec-Fetch-Mode": "cors",
+    #                     "Sec-Fetch-Site": "same-origin"
+    #                 },
+    #                 timeout=self.timeout,
+    #                 allow_redirects=True
+    #             )
+    #             logger.info(f"API endpoint test response: {api_test_response.status_code}")
+    #             logger.info(f"Cookies after API endpoint test: {dict(self.session.cookies)}")
+    #         except Exception as e:
+    #             logger.warning(f"API endpoint test failed: {str(e)}")
             
-            logger.info(f"Final cookies: {dict(self.session.cookies)}")
+    #         logger.info(f"Final cookies: {dict(self.session.cookies)}")
             
-            # Check for specific important cookies
-            important_cookies = ['_cflb', 'TRINITY_USER_DATA', 'TRINITY_USER_ID', 'SearchSession', 'WSS_FullScreenMode']
-            received_cookies = [cookie for cookie in important_cookies if cookie in self.session.cookies]
-            logger.info(f"Important cookies received: {received_cookies}")
+    #         # Check for specific important cookies
+    #         important_cookies = ['_cflb', 'TRINITY_USER_DATA', 'TRINITY_USER_ID', 'SearchSession', 'WSS_FullScreenMode']
+    #         received_cookies = [cookie for cookie in important_cookies if cookie in self.session.cookies]
+    #         logger.info(f"Important cookies received: {received_cookies}")
             
-            if received_cookies:
-                logger.info("Session established successfully with important cookies")
-            else:
-                logger.warning("No important cookies received - API call may fail")
-                logger.warning("These cookies are likely set by JavaScript - trying alternative approach")
+    #         if received_cookies:
+    #             logger.info("Session established successfully with important cookies")
+    #         else:
+    #             logger.warning("No important cookies received - API call may fail")
+    #             logger.warning("These cookies are likely set by JavaScript - trying alternative approach")
                 
-                # Try to manually set some basic cookies that might help
-                logger.info("Attempting to set basic session cookies manually...")
-                try:
-                    # Set some basic cookies that might be expected
-                    self.session.cookies.set('WSS_FullScreenMode', 'false', domain='.netanya.muni.il')
-                    self.session.cookies.set('SearchSession', 'manual-session-id', domain='.netanya.muni.il')
-                    logger.info("Set basic cookies manually")
-                except Exception as e:
-                    logger.warning(f"Failed to set manual cookies: {str(e)}")
+    #             # Try to manually set some basic cookies that might help
+    #             logger.info("Attempting to set basic session cookies manually...")
+    #             try:
+    #                 # Set some basic cookies that might be expected
+    #                 self.session.cookies.set('WSS_FullScreenMode', 'false', domain='.netanya.muni.il')
+    #                 self.session.cookies.set('SearchSession', 'manual-session-id', domain='.netanya.muni.il')
+    #                 logger.info("Set basic cookies manually")
+    #             except Exception as e:
+    #                 logger.warning(f"Failed to set manual cookies: {str(e)}")
                 
-        except Exception as e:
-            logger.warning(f"Failed to establish session: {str(e)}")
-            # Continue anyway - some APIs work without pre-session
-
-    def establish_session_with_selenium(self) -> None:
-        """
-        Establish a session using Selenium with Chrome to bypass Cloudflare.
-        This should capture the essential cookies that are set by JavaScript.
-        """
-        driver = None
-        temp_dir = None
-        try:
-            logger.info("Establishing session with Selenium (Chrome)...")
-            
-            # Create Chrome driver options
-            options = Options()
-            options.add_argument('--headless=new')  # Use new headless mode (more stable)
-            options.add_argument('--no-sandbox')
-            options.add_argument('--disable-dev-shm-usage')
-            options.add_argument('--disable-gpu')
-            options.add_argument('--window-size=1920,1080')
-            options.add_argument('--remote-debugging-port=9222')  # Enable remote debugging
-            
-            # Set realistic Chrome user agent
-            user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
-            options.add_argument(f'--user-agent={user_agent}')
-            options.add_argument('--disable-blink-features=AutomationControlled')
-            options.add_experimental_option("excludeSwitches", ["enable-automation"])
-            options.add_experimental_option('useAutomationExtension', False)
-            
-            # Disable cache completely to avoid permission issues
-            # Chrome still tries to write cache even without user-data-dir
-            options.add_argument('--disk-cache-size=0')
-            options.add_argument('--disable-application-cache')
-            options.add_argument('--disable-gpu-process-crash-limit')
-            
-            # Set temp directory for Chrome to use for temporary files
-            import tempfile
-            import os
-            temp_dir = tempfile.mkdtemp(prefix='selenium_chrome_')
-            os.environ['TMPDIR'] = temp_dir
-            os.environ['XDG_RUNTIME_DIR'] = temp_dir
-            logger.info(f"Using temporary directory for Chrome temp files: {temp_dir}")
-            
-            options.add_argument('--disable-web-security')
-            options.add_argument('--disable-features=VizDisplayCompositor')
-            
-            # Fix permission issues in Cloud Run
-            options.add_argument('--disable-background-timer-throttling')
-            options.add_argument('--disable-backgrounding-occluded-windows')
-            options.add_argument('--disable-renderer-backgrounding')
-            options.add_argument('--disable-features=TranslateUI')
-            options.add_argument('--disable-ipc-flooding-protection')
-            options.add_argument('--single-process')  # Important for Cloud Run
-            options.add_argument('--no-zygote')  # Important for Cloud Run
-            
-            # Additional flags to prevent SIGTRAP errors in Cloud Run
-            options.add_argument('--disable-setuid-sandbox')
-            options.add_argument('--disable-software-rasterizer')
-            options.add_argument('--disable-accelerated-2d-canvas')
-            options.add_argument('--disable-accelerated-video-decode')
-            options.add_argument('--disable-background-networking')
-            options.add_argument('--disable-breakpad')
-            options.add_argument('--disable-client-side-phishing-detection')
-            options.add_argument('--disable-component-update')
-            options.add_argument('--disable-default-apps')
-            options.add_argument('--disable-domain-reliability')
-            options.add_argument('--disable-sync')
-            options.add_argument('--disable-hang-monitor')
-            options.add_argument('--disable-popup-blocking')
-            options.add_argument('--disable-prompt-on-repost')
-            options.add_argument('--metrics-recording-only')
-            options.add_argument('--no-first-run')
-            options.add_argument('--safebrowsing-disable-auto-update')
-            options.add_argument('--enable-automation')
-            options.add_argument('--password-store=basic')
-            options.add_argument('--use-mock-keychain')
-            
-            # Enable JavaScript (essential for Cloudflare)
-            options.add_argument('--enable-javascript')
-            options.add_argument('--enable-scripts')
-            options.add_argument('--disable-extensions')
-            options.add_argument('--disable-plugins')
-            options.add_argument('--disable-images')  # Speed up loading
-            
-            # Set environment variables for Chrome
-            os.environ['CHROME_BIN'] = '/usr/bin/chromium'
-            os.environ['CHROME_PATH'] = '/usr/bin/chromium'
-            os.environ['DBUS_SESSION_BUS_ADDRESS'] = '/dev/null'
-            
-            # Additional Chrome service arguments for stability
-            from selenium.webdriver.chrome.service import Service
-            service = Service()
-            service.log_path = '/tmp/chromedriver.log'
-            
-            # Create WebDriver with service and comprehensive error handling
-            try:
-                logger.info("Creating Chrome WebDriver with chromium binary...")
-                driver = webdriver.Chrome(service=service, options=options)
-                logger.info("Chrome WebDriver created successfully")
-            except Exception as driver_error:
-                logger.error(f"Failed to create Chrome WebDriver: {driver_error}")
-                logger.error(f"Driver error type: {type(driver_error).__name__}")
-                logger.error(f"Driver error details: {str(driver_error)}")
-                raise
-            
-            # Step 1: Visit main domain
-            try:
-                logger.info("Selenium Step 1: Visiting main domain...")
-                driver.get("https://www.netanya.muni.il/")
-                logger.info("Step 1: Successfully loaded main domain")
-                time.sleep(3)  # Wait for page to load and cookies to be set
-            except Exception as nav_error:
-                logger.error(f"Failed to navigate to main domain: {nav_error}")
-                raise
-            
-            # Step 2: Visit services page
-            logger.info("Selenium Step 2: Visiting services page...")
-            driver.get("https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/default.aspx")
-            time.sleep(3)
-            
-            # Step 3: Visit complaints page
-            logger.info("Selenium Step 3: Visiting complaints page...")
-            driver.get("https://www.netanya.muni.il/CityHall/ServicesInnovation/Pages/PublicComplaints.aspx")
-            time.sleep(3)
-            
-            # Extract cookies from Selenium and add to requests session
-            selenium_cookies = driver.get_cookies()
-            logger.info(f"Selenium captured {len(selenium_cookies)} cookies")
-            
-            # Add cookies to requests session
-            for cookie in selenium_cookies:
-                self.session.cookies.set(
-                    cookie['name'], 
-                    cookie['value'], 
-                    domain=cookie.get('domain', '.netanya.muni.il'),
-                    path=cookie.get('path', '/')
-                )
-            
-            logger.info(f"Added cookies to requests session: {dict(self.session.cookies)}")
-            
-            # Check for essential cookies
-            essential_cookies = ['_cflb', 'TRINITY_USER_DATA', 'TRINITY_USER_ID', 'SearchSession', 'WSS_FullScreenMode']
-            received_cookies = [cookie for cookie in essential_cookies if cookie in self.session.cookies]
-            logger.info(f"Essential cookies captured by Selenium: {received_cookies}")
-            
-            if received_cookies:
-                logger.info("Selenium session establishment successful with essential cookies")
-            else:
-                logger.warning("Selenium captured cookies but not the essential ones")
-                
-        except Exception as e:
-            logger.error(f"Selenium session establishment failed: {str(e)}")
-            logger.error(f"Error details: {e.__dict__}")
-        finally:
-            if driver:
-                try:
-                    driver.quit()
-                except Exception as e:
-                    logger.warning(f"Failed to close Selenium driver: {str(e)}")
-            
-            # Clean up temporary directory
-            if temp_dir:
-                try:
-                    import shutil
-                    shutil.rmtree(temp_dir)
-                    logger.info(f"Cleaned up temporary directory: {temp_dir}")
-                except Exception as e:
-                    logger.warning(f"Failed to clean up temporary directory {temp_dir}: {str(e)}")
-
-    def verify_session_cookies(self) -> None:
-        """
-        Verify that we have the essential cookies for SharePoint API calls.
-        """
-        essential_cookies = ['_cflb', 'TRINITY_USER_DATA', 'TRINITY_USER_ID']
-        missing_cookies = [cookie for cookie in essential_cookies if cookie not in self.session.cookies]
-        
-        if missing_cookies:
-            logger.warning(f"Missing essential cookies: {missing_cookies}")
-            logger.warning("API call may fail due to missing session cookies")
-            logger.warning("Proceeding anyway - will attempt API call to see specific error")
-        else:
-            logger.info("All essential cookies present for API call")
-        
-        # Log all cookies for debugging
-        logger.info(f"Current session cookies: {list(self.session.cookies.keys())}")
-        
-        # If we have any cookies at all, log them
-        if self.session.cookies:
-            logger.info(f"Available cookies: {dict(self.session.cookies)}")
-        else:
-            logger.warning("No cookies captured at all - this is unusual")
+    #     except Exception as e:
+    #         logger.warning(f"Failed to establish session: {str(e)}")
+    #         # Continue anyway - some APIs work without pre-session
 
     def submit_to_sharepoint(
         self,
@@ -618,16 +423,6 @@ class SharePointClient:
             SharePointError: If submission fails
         """
         try:
-            # Try to use Selenium to establish session and capture cookies
-            try:
-                self.establish_session_with_selenium()
-                # Verify we have essential cookies
-                self.verify_session_cookies()
-            except Exception as selenium_error:
-                logger.warning(f"Selenium session establishment failed: {selenium_error}")
-                logger.warning("Proceeding without Selenium cookies - may fail due to Cloudflare protection")
-                # Continue without cookies - the request might still work
-            
             # Build multipart request
             multipart_request = self.build_multipart_request(payload, file)
             

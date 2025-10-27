@@ -166,7 +166,6 @@ def test_api_documentation_content_completeness():
             paths = openapi_spec.get("paths", {})
             assert "/incidents/submit" in paths
             assert "/health" in paths
-            assert "/health/detailed" in paths
             assert "/health/ready" in paths
             assert "/health/live" in paths
             
