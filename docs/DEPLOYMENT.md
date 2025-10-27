@@ -135,41 +135,12 @@ gcloud run deploy netanya-incident-service \
   --max-instances=100
 ```
 
-### 3. Infrastructure as Code (Terraform)
+### 3. CI/CD Workflow
 
-#### Initialize Terraform
-
-```bash
-cd deployment/terraform
-
-# Initialize Terraform
-terraform init
-
-# Create workspace for environment
-terraform workspace new production
-terraform workspace new staging
-```
-
-#### Deploy with Terraform
-
-```bash
-# Select environment
-terraform workspace select production
-
-# Plan deployment
-terraform plan \
-  -var="project_id=YOUR_PROJECT_ID" \
-  -var="environment=production" \
-  -var="image_tag=main" \
-  -var="sharepoint_endpoint=YOUR_SHAREPOINT_URL"
-
-# Apply deployment
-terraform apply \
-  -var="project_id=YOUR_PROJECT_ID" \
-  -var="environment=production" \
-  -var="image_tag=main" \
-  -var="sharepoint_endpoint=YOUR_SHAREPOINT_URL"
-```
+The project uses GitHub Actions for automated builds and deployments. The workflow is defined in `.github/workflows/build-and-deploy.yml` and automatically:
+- Builds Docker images on push
+- Pushes to Google Artifact Registry
+- Deploys to Cloud Run (production) when pushing to main branch
 
 ## Configuration Management
 
@@ -221,11 +192,13 @@ gcloud secrets add-iam-policy-binding sharepoint-endpoint \
 
 ### Health Check Configuration
 
-Cloud Run automatically configures health checks using the service's health endpoints:
+Cloud Run automatically configures health checks using the service's health endpoint:
 
-- **Startup Probe**: `/health` (checks if service is starting)
-- **Liveness Probe**: `/health/live` (checks if service is running)
-- **Readiness Probe**: `/health/ready` (checks if service can handle requests)
+- **Health Endpoint**: `/health` - Comprehensive health status with dependency checks
+  - Returns overall status (healthy/degraded/unhealthy)
+  - Includes SharePoint connectivity status
+  - Includes configuration validation status
+  - Provides response time metrics
 
 ### Monitoring Setup
 
@@ -358,10 +331,14 @@ gcloud run services describe netanya-incident-service
 
 #### Health Check Failures
 ```bash
-# Test health endpoints manually
+# Test health endpoint manually
 curl https://YOUR-SERVICE-URL.run.app/health
-curl https://YOUR-SERVICE-URL.run.app/health/ready
-curl https://YOUR-SERVICE-URL.run.app/health/live
+
+# Expected response includes:
+# - overall_status: "healthy", "degraded", or "unhealthy"
+# - dependencies: SharePoint connectivity status
+# - service_info: Version and environment info
+# - response_time_ms: Health check response time
 ```
 
 #### Secret Access Issues

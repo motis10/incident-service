@@ -302,12 +302,15 @@ def submit_incident(incident_data, image_file=None):
 
 ## Monitoring and Observability
 
-### Health Check Endpoints
-Monitor service health using the provided health check endpoints:
-- `/health` - Basic health status
-- `/health/detailed` - Comprehensive health with dependencies
-- `/health/ready` - Readiness for load balancer
-- `/health/live` - Liveness for container orchestration
+### Health Check Endpoint
+Monitor service health using the health check endpoint:
+- `/health` - Comprehensive health status with:
+  - Overall service status (healthy/degraded/unhealthy)
+  - SharePoint connectivity status
+  - Configuration validation status
+  - Service version and environment information
+  - Response time metrics
+  - Dependencies health checks
 
 ### Correlation IDs
 Every request receives a unique correlation ID for tracing and debugging. Include this ID when reporting issues.
