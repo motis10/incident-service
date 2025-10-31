@@ -158,5 +158,5 @@ class IncidentService:
                 f"Unexpected error during incident submission [correlation_id: {correlation_id}]: {type(e).__name__}: {str(e)}"
             )
             logger.error(f"Error details [correlation_id: {correlation_id}]: {e.__dict__}")
-            logger.error(f"Request context [correlation_id: {correlation_id}]: incident_request={incident_request}")
+            logger.error(f"Request context [correlation_id: {correlation_id}]: {request}")
             raise IncidentSubmissionError(f"Incident submission failed: {str(e)}")
